@@ -1,0 +1,119 @@
+syntax = "proto3";
+package zxpm.plugin;
+
+option go_package = "./api";
+
+message Config {
+  map<string, string> values = 3;
+}
+
+message Descriptor {
+  message Goal {
+    string name = 1;
+    string short = 2;
+    repeated string aliases = 3;
+  }
+
+  message Task {
+    string name = 2;
+    string short = 3;
+    repeated string requires = 4;
+  }
+}
+
+message Task {
+  message Implements {
+    message Response {
+      repeated Descriptor.Task tasks = 1;
+    }
+
+    message Request {
+    }
+  }
+
+  message Goal {
+    message Response {
+      Descriptor.Goal definition = 1;
+    }
+
+    message Request {
+      string name = 1;
+    }
+  }
+
+  message Ref {
+    string name = 1;
+    string state_id = 2;
+  }
+
+  message Prepare {
+    message Request {
+      string name = 1;
+      Config global_config = 2;
+    }
+
+    message Response {
+      Task.Ref task = 1;
+      map<string, string> storage = 2;
+    }
+  }
+
+  message Cancel {
+    message Request {
+      Task.Ref task = 1;
+      map<string, string> storage = 2;
+    }
+
+    message Response {
+    }
+  }
+
+  message Complete {
+    message Request {
+      Task.Ref task = 1;
+      map<string, string> storage = 2;
+    }
+
+    message Response {
+    }
+  }
+
+  message Operation {
+    message Request {
+      Task.Ref task = 1;
+      map<string, string> storage = 2;
+    }
+
+    message Response {
+      map<string, string> storage_update = 2;
+    }
+  }
+
+  message SubStage {
+    message Response {
+      repeated int32 provided_orders = 1;
+    }
+
+    message Request {
+      Operation.Request request = 1;
+      int32 sub_stage = 2;
+    }
+  }
+}
+
+service TaskExecution {
+  rpc Implements(Task.Implements.Request) returns (Task.Implements.Response) {}
+  rpc Goal(Task.Goal.Request) returns (Task.Goal.Response) {}
+  rpc Prepare(Task.Prepare.Request) returns (Task.Prepare.Response) {}
+  rpc Cancel(Task.Cancel.Request) returns (Task.Cancel.Response) {}
+  rpc Complete(Task.Complete.Request) returns (Task.Complete.Response) {}
+
+  rpc ExecuteCheck(Task.Operation.Request) returns (Task.Operation.Response) {}
+  rpc PrepareBegin(Task.Ref) returns (Task.SubStage.Response) {}
+  rpc ExecuteBegin(Task.SubStage.Request) returns (Task.Operation.Response) {}
+  rpc PrepareRun(Task.Ref) returns (Task.SubStage.Response) {}
+  rpc ExecuteRun(Task.SubStage.Request) returns (Task.Operation.Response) {}
+  rpc PrepareEnd(Task.Ref) returns (Task.SubStage.Response) {}
+  rpc ExecuteEnd(Task.SubStage.Request) returns (Task.Operation.Response) {}
+  rpc ExecuteFinish(Task.Operation.Request) returns (Task.Operation.Response) {}
+}
