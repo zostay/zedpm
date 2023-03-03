@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
 )

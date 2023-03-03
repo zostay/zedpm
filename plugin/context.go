@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/storage"
 )
