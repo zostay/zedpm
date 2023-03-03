@@ -55,6 +55,11 @@ goal with multiple configurations by having configured targets.
 Here are listed the common goals that are built-in to zedpm. Any plugin may
 define additional goals, if desired.
 
+### Init (not yet implemented)
+
+The init goal will initialize a new project and fill it with standard 
+boilerplate and initialize files and configurations.
+
 ### Generate (not yet implemented)
 
 The generate goal is will take source code in one form and generate it in
