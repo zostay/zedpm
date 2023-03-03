@@ -2,8 +2,6 @@ package plugin
 
 import (
 	"context"
-	"reflect"
-	"strings"
 	"sync"
 	"time"
 
@@ -93,11 +91,6 @@ func Logger(ctx context.Context, withArgs ...interface{}) hclog.Logger {
 		return pctx.logger.With(withArgs...)
 	}
 	return pctx.logger
-}
-
-func ConfigName(o any) string {
-	pkg := reflect.TypeOf(o).PkgPath()
-	return strings.ReplaceAll(pkg, ".", "_")
 }
 
 func ForCleanup(ctx context.Context, newCleaner SimpleTask) {

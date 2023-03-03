@@ -7,8 +7,6 @@ import (
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
-var changelogPlugin = plugin.ConfigName(Plugin{})
-
 type Plugin struct{}
 
 var _ plugin.Interface = &Plugin{}

@@ -7,8 +7,6 @@ import (
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
-var gitPlugin = plugin.ConfigName(Plugin{})
-
 var _ plugin.Interface = &Plugin{}
 
 type Plugin struct{}
