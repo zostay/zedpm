@@ -47,7 +47,7 @@ func NewTaskExecutionClient(cc grpc.ClientConnInterface) TaskExecutionClient {
 
 func (c *taskExecutionClient) Implements(ctx context.Context, in *Task_Implements_Request, opts ...grpc.CallOption) (*Task_Implements_Response, error) {
 	out := new(Task_Implements_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/Implements", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/Implements", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *taskExecutionClient) Implements(ctx context.Context, in *Task_Implement
 
 func (c *taskExecutionClient) Goal(ctx context.Context, in *Task_Goal_Request, opts ...grpc.CallOption) (*Task_Goal_Response, error) {
 	out := new(Task_Goal_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/Goal", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/Goal", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (c *taskExecutionClient) Goal(ctx context.Context, in *Task_Goal_Request, o
 
 func (c *taskExecutionClient) Prepare(ctx context.Context, in *Task_Prepare_Request, opts ...grpc.CallOption) (*Task_Prepare_Response, error) {
 	out := new(Task_Prepare_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/Prepare", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/Prepare", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *taskExecutionClient) Prepare(ctx context.Context, in *Task_Prepare_Requ
 
 func (c *taskExecutionClient) Cancel(ctx context.Context, in *Task_Cancel_Request, opts ...grpc.CallOption) (*Task_Cancel_Response, error) {
 	out := new(Task_Cancel_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/Cancel", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/Cancel", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (c *taskExecutionClient) Cancel(ctx context.Context, in *Task_Cancel_Reques
 
 func (c *taskExecutionClient) Complete(ctx context.Context, in *Task_Complete_Request, opts ...grpc.CallOption) (*Task_Complete_Response, error) {
 	out := new(Task_Complete_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/Complete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/Complete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (c *taskExecutionClient) Complete(ctx context.Context, in *Task_Complete_Re
 
 func (c *taskExecutionClient) ExecuteCheck(ctx context.Context, in *Task_Operation_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error) {
 	out := new(Task_Operation_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/ExecuteCheck", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/ExecuteCheck", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (c *taskExecutionClient) ExecuteCheck(ctx context.Context, in *Task_Operati
 
 func (c *taskExecutionClient) PrepareBegin(ctx context.Context, in *Task_Ref, opts ...grpc.CallOption) (*Task_SubStage_Response, error) {
 	out := new(Task_SubStage_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/PrepareBegin", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/PrepareBegin", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (c *taskExecutionClient) PrepareBegin(ctx context.Context, in *Task_Ref, op
 
 func (c *taskExecutionClient) ExecuteBegin(ctx context.Context, in *Task_SubStage_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error) {
 	out := new(Task_Operation_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/ExecuteBegin", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/ExecuteBegin", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (c *taskExecutionClient) ExecuteBegin(ctx context.Context, in *Task_SubStag
 
 func (c *taskExecutionClient) PrepareRun(ctx context.Context, in *Task_Ref, opts ...grpc.CallOption) (*Task_SubStage_Response, error) {
 	out := new(Task_SubStage_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/PrepareRun", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/PrepareRun", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (c *taskExecutionClient) PrepareRun(ctx context.Context, in *Task_Ref, opts
 
 func (c *taskExecutionClient) ExecuteRun(ctx context.Context, in *Task_SubStage_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error) {
 	out := new(Task_Operation_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/ExecuteRun", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/ExecuteRun", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (c *taskExecutionClient) ExecuteRun(ctx context.Context, in *Task_SubStage_
 
 func (c *taskExecutionClient) PrepareEnd(ctx context.Context, in *Task_Ref, opts ...grpc.CallOption) (*Task_SubStage_Response, error) {
 	out := new(Task_SubStage_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/PrepareEnd", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/PrepareEnd", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (c *taskExecutionClient) PrepareEnd(ctx context.Context, in *Task_Ref, opts
 
 func (c *taskExecutionClient) ExecuteEnd(ctx context.Context, in *Task_SubStage_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error) {
 	out := new(Task_Operation_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/ExecuteEnd", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/ExecuteEnd", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (c *taskExecutionClient) ExecuteEnd(ctx context.Context, in *Task_SubStage_
 
 func (c *taskExecutionClient) ExecuteFinish(ctx context.Context, in *Task_Operation_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error) {
 	out := new(Task_Operation_Response)
-	err := c.cc.Invoke(ctx, "/zxpm.plugin.TaskExecution/ExecuteFinish", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/zedpm.plugin.TaskExecution/ExecuteFinish", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func _TaskExecution_Implements_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/Implements",
+		FullMethod: "/zedpm.plugin.TaskExecution/Implements",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).Implements(ctx, req.(*Task_Implements_Request))
@@ -266,7 +266,7 @@ func _TaskExecution_Goal_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/Goal",
+		FullMethod: "/zedpm.plugin.TaskExecution/Goal",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).Goal(ctx, req.(*Task_Goal_Request))
@@ -284,7 +284,7 @@ func _TaskExecution_Prepare_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/Prepare",
+		FullMethod: "/zedpm.plugin.TaskExecution/Prepare",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).Prepare(ctx, req.(*Task_Prepare_Request))
@@ -302,7 +302,7 @@ func _TaskExecution_Cancel_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/Cancel",
+		FullMethod: "/zedpm.plugin.TaskExecution/Cancel",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).Cancel(ctx, req.(*Task_Cancel_Request))
@@ -320,7 +320,7 @@ func _TaskExecution_Complete_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/Complete",
+		FullMethod: "/zedpm.plugin.TaskExecution/Complete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).Complete(ctx, req.(*Task_Complete_Request))
@@ -338,7 +338,7 @@ func _TaskExecution_ExecuteCheck_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/ExecuteCheck",
+		FullMethod: "/zedpm.plugin.TaskExecution/ExecuteCheck",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).ExecuteCheck(ctx, req.(*Task_Operation_Request))
@@ -356,7 +356,7 @@ func _TaskExecution_PrepareBegin_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/PrepareBegin",
+		FullMethod: "/zedpm.plugin.TaskExecution/PrepareBegin",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).PrepareBegin(ctx, req.(*Task_Ref))
@@ -374,7 +374,7 @@ func _TaskExecution_ExecuteBegin_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/ExecuteBegin",
+		FullMethod: "/zedpm.plugin.TaskExecution/ExecuteBegin",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).ExecuteBegin(ctx, req.(*Task_SubStage_Request))
@@ -392,7 +392,7 @@ func _TaskExecution_PrepareRun_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/PrepareRun",
+		FullMethod: "/zedpm.plugin.TaskExecution/PrepareRun",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).PrepareRun(ctx, req.(*Task_Ref))
@@ -410,7 +410,7 @@ func _TaskExecution_ExecuteRun_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/ExecuteRun",
+		FullMethod: "/zedpm.plugin.TaskExecution/ExecuteRun",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).ExecuteRun(ctx, req.(*Task_SubStage_Request))
@@ -428,7 +428,7 @@ func _TaskExecution_PrepareEnd_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/PrepareEnd",
+		FullMethod: "/zedpm.plugin.TaskExecution/PrepareEnd",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).PrepareEnd(ctx, req.(*Task_Ref))
@@ -446,7 +446,7 @@ func _TaskExecution_ExecuteEnd_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/ExecuteEnd",
+		FullMethod: "/zedpm.plugin.TaskExecution/ExecuteEnd",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).ExecuteEnd(ctx, req.(*Task_SubStage_Request))
@@ -464,7 +464,7 @@ func _TaskExecution_ExecuteFinish_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zxpm.plugin.TaskExecution/ExecuteFinish",
+		FullMethod: "/zedpm.plugin.TaskExecution/ExecuteFinish",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaskExecutionServer).ExecuteFinish(ctx, req.(*Task_Operation_Request))
@@ -476,7 +476,7 @@ func _TaskExecution_ExecuteFinish_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TaskExecution_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "zxpm.plugin.TaskExecution",
+	ServiceName: "zedpm.plugin.TaskExecution",
 	HandlerType: (*TaskExecutionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

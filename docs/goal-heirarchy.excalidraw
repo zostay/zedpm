@@ -363,14 +363,14 @@
       "updated": 1676913599250,
       "link": null,
       "locked": false,
-      "text": "The overall repository, zxpm configuration, and such is the project being worked upon.",
+      "text": "The overall repository, zedpm configuration, and such is the project being worked upon.",
       "fontSize": 20,
       "fontFamily": 1,
       "textAlign": "left",
       "verticalAlign": "top",
       "baseline": 18,
       "containerId": null,
-      "originalText": "The overall repository, zxpm configuration, and such is the project being worked upon."
+      "originalText": "The overall repository, zedpm configuration, and such is the project being worked upon."
     },
     {
       "id": "zKVkWHmfuHUGqs3AmsqGF",
@@ -397,14 +397,14 @@
       "updated": 1676913738115,
       "link": null,
       "locked": false,
-      "text": "The top-level procedure that operates across one or more plugins to complete to \nachieve some purpose is a goal. Goals are run as commands: zxpm release",
+      "text": "The top-level procedure that operates across one or more plugins to complete to \nachieve some purpose is a goal. Goals are run as commands: zedpm release",
       "fontSize": 20,
       "fontFamily": 1,
       "textAlign": "left",
       "verticalAlign": "top",
       "baseline": 43,
       "containerId": null,
-      "originalText": "The top-level procedure that operates across one or more plugins to complete to \nachieve some purpose is a goal. Goals are run as commands: zxpm release"
+      "originalText": "The top-level procedure that operates across one or more plugins to complete to \nachieve some purpose is a goal. Goals are run as commands: zedpm release"
     },
     {
       "id": "UDNX3LO4-_PPCUh_xrNEJ",

@@ -13,7 +13,7 @@ func LocateAndLoadHome() (*Config, error) {
 		return nil, nil
 	}
 
-	homeConf := filepath.Join(userDir, ".zxpm.conf")
+	homeConf := filepath.Join(userDir, ".zedpm.conf")
 	r, err := os.Open(homeConf)
 	if err != nil {
 		return nil, nil
@@ -29,7 +29,7 @@ func LocateAndLoadProject() (*Config, error) {
 	}
 
 	for i := 0; i < 3; i++ {
-		curConf := filepath.Join(curDir, "zxpm.conf")
+		curConf := filepath.Join(curDir, "zedpm.conf")
 		r, err := os.Open(curConf)
 		if err == nil {
 			return Load(curConf, r)
@@ -61,22 +61,22 @@ func DefaultConfig() *Config {
 		Plugins: []PluginConfig{
 			{
 				Name:       "goals",
-				Command:    "zxpm-plugin-goals",
+				Command:    "zedpm-plugin-goals",
 				Properties: storage.New().RO(),
 			},
 			{
 				Name:       "changelog",
-				Command:    "zxpm-plugin-changelog",
+				Command:    "zedpm-plugin-changelog",
 				Properties: storage.New().RO(),
 			},
 			{
 				Name:       "git",
-				Command:    "zxpm-plugin-git",
+				Command:    "zedpm-plugin-git",
 				Properties: storage.New().RO(),
 			},
 			{
 				Name:       "github",
-				Command:    "zxpm-plugin-github",
+				Command:    "zedpm-plugin-github",
 				Properties: storage.New().RO(),
 			},
 		},

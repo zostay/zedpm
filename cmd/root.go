@@ -13,7 +13,7 @@ import (
 var (
 	rootCmd = &cobra.Command{
 		Use:   "zedpm",
-		Short: "Golang project management tools by zostay",
+		Short: "The Golang project management tool with the power to save the galaxy.",
 	}
 )
 
@@ -25,7 +25,7 @@ func init() {
 func Execute() {
 	cfg, err := config2.LocateAndLoad()
 	if err != nil {
-		panic(fmt.Sprintf("zxpm failed to load: %v\n", err))
+		panic(fmt.Sprintf("zedpm failed to load: %v\n", err))
 	}
 
 	stdOut := metal.NewSyncBuffer(os.Stdout)
@@ -39,7 +39,7 @@ func Execute() {
 
 	err = configureTasks(cfg, plugins, runCmd)
 	if err != nil {
-		panic(fmt.Sprintf("zxpm failed to configure goals: %v\n", err))
+		panic(fmt.Sprintf("zedpm failed to configure goals: %v\n", err))
 	}
 
 	err = rootCmd.Execute()
