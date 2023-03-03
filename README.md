@@ -147,17 +147,19 @@ of common dev tasks. The Perl community built rich project management tools
 aimed at enabling developers to quickly and easily build new prototypes, check 
 the code for correctness, and release that code for others to use.
 
-Tools like [ExtUtils::MakeMaker](https://metacpan.org/pod/ExtUtils::MakeMaker),
-[Module::Build](https://metacpan.org/pod/Module::Build), and
-[Dist::Zilla](https://metacpan.org/pod/Dist::Zilla) provided much of the
-inspiration for this tool.  ExtUtils::MakeMaker is a very old tool that allows
-you to quickly generate an entire Makefile customized for your project based
-upon configuration contained in a simple Perl program. Module::Build extended
-this to alleviate the need for the Makefile when such was unnecessary.  And
-Dist::Zilla provided additional tools for managing module dependencies,
-releasing and deploying software, and generating boilerplate, such as ensuring
-that all source files have the latest license attached or that each have
-complete and correctly formatted documentation.
+Tools like [ExtUtils::MakeMaker][mm], [Module::Build][mb], and [Dist::Zilla][dz]
+provided much of the inspiration for this tool.  ExtUtils::MakeMaker is a very 
+old tool that allows you to quickly generate an entire Makefile customized for 
+your project based upon configuration contained in a simple Perl program. 
+Module::Build extended this to alleviate the need for the Makefile when such was 
+unnecessary. And Dist::Zilla provided additional tools for managing module 
+dependencies, releasing and deploying software, and generating boilerplate, such 
+as ensuring that all source files have the latest license attached or that each 
+have complete and correctly formatted documentation.
+
+[mm]: <https://metacpan.org/pod/ExtUtils::MakeMaker>
+[mb]: <https://metacpan.org/pod/Module::Build>
+[dz]: <https://metacpan.org/pod/Dist::Zilla>
 
 These tools went a long way to ensuring that Perl developers did not waste a lot
 of time remembering commands, mucking about with esoteric Makefile syntax, and
