@@ -136,6 +136,34 @@ release.
 This provides the definition for the zedpm built-in goals and related support
 code and tasks.
 
+# Inspiration
+
+At this time, I think it would be wrong for me not to mention that this project
+was inspired by other tools. I spent most of the past 20 years working in the
+Perl programming language. When I came to Golang, one thing became immediately
+apparent: while the `go` command itself does slightly more and useful things
+than the `perl` command, it is vastly inadequate for performing the full range
+of common dev tasks. The Perl community built rich project management tools 
+aimed at enabling developers to quickly and easily build new prototypes, check 
+the code for correctness, and release that code for others to use.
+
+Tools like [ExtUtils::MakeMaker](https://metacpan.org/pod/ExtUtils::MakeMaker),
+[Module::Build](https://metacpan.org/pod/Module::Build), and
+[Dist::Zilla](https://metacpan.org/pod/Dist::Zilla) provided much of the
+inspiration for this tool.  ExtUtils::MakeMaker is a very old tool that allows
+you to quickly generate an entire Makefile customized for your project based
+upon configuration contained in a simple Perl program. Module::Build extended
+this to alleviate the need for the Makefile when such was unnecessary.  And
+Dist::Zilla provided additional tools for managing module dependencies,
+releasing and deploying software, and generating boilerplate, such as ensuring
+that all source files have the latest license attached or that each have
+complete and correctly formatted documentation.
+
+These tools went a long way to ensuring that Perl developers did not waste a lot
+of time remembering commands, mucking about with esoteric Makefile syntax, and
+generally wasting their time on the more tedious aspects of developing a library
+or application.
+
 # Copyright & License
 
 Copyright 2023 Andrew Sterling Hanenkamp.
