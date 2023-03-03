@@ -42,19 +42,20 @@ func edgeIndex(edges map[string][]string, from, to string) int {
 }
 
 func deleteEdge(edges map[string][]string, from, to string) {
-	i := edgeIndex(edges, from, to)
-	if i < 0 {
-		return
-	}
+	for {
+		i := edgeIndex(edges, from, to)
+		if i < 0 {
+			return
+		}
 
-	if len(edges[from]) == 1 {
-		delete(edges, from)
-		return
-	}
+		if len(edges[from]) == 1 {
+			delete(edges, from)
+			return
+		}
 
-	copy(edges[from][i:], edges[from][i+1:])
-	edges[from] = edges[from][:len(edges[from])-1]
-	return
+		copy(edges[from][i:], edges[from][i+1:])
+		edges[from] = edges[from][:len(edges[from])-1]
+	}
 }
 
 func copyEdges(dst, src map[string][]string) {
@@ -125,14 +126,30 @@ func (d *DepsTree) GroupOrder() ([][]plugin.TaskDescription, error) {
 	foundNodes := make([]string, 0, len(d.nodes))
 	for len(workEdges) > 0 {
 		for from := range workNodes {
-			if _, hasAnyEdges := workEdges[from]; !hasAnyEdges {
-				foundNodes = append(foundNodes, from)
+			if edges, hasAnyEdges := workEdges[from]; hasAnyEdges {
+				// detect nodes that get mentioned, but aren't defined
+				for _, edge := range edges {
+					if _, edgePointsToRealNode := workNodes[edge]; !edgePointsToRealNode {
+						return nil, fmt.Errorf("tasks contain an unfulfilled dependency %q, cannot run this goal", edge)
+					}
+				}
+				continue
 			}
+
+			// this is what we're really searching for
+			foundNodes = append(foundNodes, from)
 		}
 
 		// this would mean there's a cycle in the dependency graph
 		if len(foundNodes) == 0 {
-			return nil, fmt.Errorf("tasks contain a dependency cycle, cannot run this goal")
+			// remaining nodes form the cycle, so let's write them out
+			cycle := &strings.Builder{}
+			for from := range workNodes {
+				for _, to := range workEdges[from] {
+					fmt.Fprintf(cycle, " - %s => %s\n", from, to)
+				}
+			}
+			return nil, fmt.Errorf("tasks contain a dependency cycle, cannot run this goal:\n%s", cycle.String())
 		}
 
 		// once used, we can remove these from the list
