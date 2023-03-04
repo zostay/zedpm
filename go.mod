@@ -6,8 +6,11 @@ require (
 	github.com/coreos/go-semver v0.3.1
 	github.com/go-git/go-git/v5 v5.6.0
 	github.com/google/go-github/v49 v49.1.0
+	github.com/gosuri/uilive v0.0.4
+	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/go-plugin v1.4.9
 	github.com/hashicorp/hcl/v2 v2.16.1
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
@@ -33,7 +36,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/hashicorp/go-hclog v1.2.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
@@ -47,7 +49,6 @@ require (
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/run v1.0.0 // indirect
-	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
