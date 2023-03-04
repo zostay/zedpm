@@ -6,6 +6,7 @@ require (
 	github.com/coreos/go-semver v0.3.1
 	github.com/go-git/go-git/v5 v5.6.0
 	github.com/google/go-github/v49 v49.1.0
+	github.com/gosuri/uilive v0.0.4
 	github.com/hashicorp/go-hclog v1.2.0
 	github.com/hashicorp/go-plugin v1.4.9
 	github.com/hashicorp/hcl/v2 v2.16.1
