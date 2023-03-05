@@ -7,6 +7,12 @@ import (
 	"github.com/zostay/zedpm/storage"
 )
 
+// LocateAndLoadHome will load the user-global configuration file from
+//
+//	~/.zedpm.conf
+//
+// This file is only used for goals outside of an existing project (such as
+// init).
 func LocateAndLoadHome() (*Config, error) {
 	userDir, err := os.UserHomeDir()
 	if err != nil {
@@ -22,7 +28,13 @@ func LocateAndLoadHome() (*Config, error) {
 	return Load(homeConf, r)
 }
 
+// LocateAndLoadProject will load the local project configuration file. This
+// file is loaded from the current working directory if possible. If not, this
+// function will try to find the file in one of the next three folders outside
+// the current directory and will stop if it appears to encounter a project
+// root, which is detected by looking for a .git directory or go.mod file.
 func LocateAndLoadProject() (*Config, error) {
+	// TODO LocateAndLoadProject might be too smart for its own good or not smart enough.
 	curDir, err := os.Getwd()
 	if err != nil {
 		return nil, nil
@@ -55,6 +67,8 @@ func LocateAndLoadProject() (*Config, error) {
 	return nil, nil
 }
 
+// DefaultConfig is the ultimate fallback configuration, used when no other
+// configuration can be found.
 func DefaultConfig() *Config {
 	return &Config{
 		Properties: storage.New().RO(),
@@ -83,7 +97,12 @@ func DefaultConfig() *Config {
 	}
 }
 
+// LocateAndLoad will attempt to load the configuration from the project
+// directory. If that fails, it will look for a global home directory
+// configuration. If that fails, it will fall back onto the ultimate default
+// configuration.
 func LocateAndLoad() (*Config, error) {
+	// TODO When fallbacks occur here, it might be worth logging a warning or something.
 	cfg, err := LocateAndLoadProject()
 	if err != nil || cfg != nil {
 		return cfg, err

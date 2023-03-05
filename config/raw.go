@@ -9,6 +9,8 @@ import (
 	"github.com/zostay/zedpm/storage"
 )
 
+// RawConfig is the configuration specification for HCL. See Config for details
+// on what the fields represent.
 type RawConfig struct {
 	Properties cty.Value `hcl:"properties,optional"`
 
@@ -16,6 +18,8 @@ type RawConfig struct {
 	Plugins []RawPluginConfig `hcl:"plugin,block"`
 }
 
+// RawGoalConfig is the configuration specification for HCL for goal
+// configuration. See GoalConfig for details on what the fields represent.
 type RawGoalConfig struct {
 	Name string `hcl:"name,label"`
 
@@ -28,6 +32,8 @@ type RawGoalConfig struct {
 	Targets []RawTargetConfig `hcl:"target,block"`
 }
 
+// RawPluginConfig is the configuration specification for HCL for plugin
+// configuration. See PluginConfig for details on what the fields represent.
 type RawPluginConfig struct {
 	Name    string `hcl:"name,label"`
 	Command string `hcl:"command,label"`
@@ -35,6 +41,8 @@ type RawPluginConfig struct {
 	Properties cty.Value `hcl:"properties,optional"`
 }
 
+// RawTaskConfig is the configuration specification for HCL for task
+// configuration. See TaskConfig for details on what the fields represent.
 type RawTaskConfig struct {
 	Name    string `hcl:"name,label"`
 	SubTask string `hcl:"subtask,label"`
@@ -48,6 +56,8 @@ type RawTaskConfig struct {
 	Tasks   []RawTaskConfig   `hcl:"task,block"`
 }
 
+// RawTargetConfig is the configuration specification for HCL for target
+// configuration. See TargetConfig for details on what the fields represent.
 type RawTargetConfig struct {
 	Name string `hcl:"name,label"`
 
@@ -57,10 +67,14 @@ type RawTargetConfig struct {
 	Properties cty.Value `hcl:"properties,optional"`
 }
 
+// p is a helper used by decodeRawProperties to create prefixes.
 func p(prefix, key string) string {
 	return prefix + key + "."
 }
 
+// decodeRawProperties takes the generic cty.Value that HCL can load generic
+// values into and decodes it into a storage.KV. The resulting storage.KV is
+// read-only, which is handy for detecting certain internal bugs.
 func decodeRawProperties(prefix string, in cty.Value) (storage.KV, error) {
 	if in.IsNull() {
 		return storage.New().RO(), nil
@@ -109,6 +123,7 @@ func decodeRawProperties(prefix string, in cty.Value) (storage.KV, error) {
 	return out.RO(), nil
 }
 
+// decodeRawConfig turns a RawConfig into a Config.
 func decodeRawConfig(rc *RawConfig) (*Config, error) {
 	props, err := decodeRawProperties("", rc.Properties)
 	if err != nil {
@@ -132,6 +147,7 @@ func decodeRawConfig(rc *RawConfig) (*Config, error) {
 	}, nil
 }
 
+// decodeRawList returns some []Raw* into a []* object via the given decoder.
 func decodeRawList[In any, Out any](
 	prefix string,
 	rs []In,
@@ -150,6 +166,7 @@ func decodeRawList[In any, Out any](
 	return out, nil
 }
 
+// decodeRawGoal converts a RawGoalConfig into a GoalConfig.
 func decodeRawGoal(prefix string, in *RawGoalConfig) (*GoalConfig, error) {
 	pn := p(prefix, in.Name)
 	props, err := decodeRawProperties(pn, in.Properties)
@@ -177,6 +194,7 @@ func decodeRawGoal(prefix string, in *RawGoalConfig) (*GoalConfig, error) {
 	}, nil
 }
 
+// decodeRawPlugin converts a RawPluginConfig into a PluginConfig.
 func decodeRawPlugin(prefix string, in *RawPluginConfig) (*PluginConfig, error) {
 	pn := p(prefix, in.Name)
 	props, err := decodeRawProperties(pn, in.Properties)
@@ -191,6 +209,7 @@ func decodeRawPlugin(prefix string, in *RawPluginConfig) (*PluginConfig, error) 
 	}, nil
 }
 
+// decodeRawTask converts a RawTaskConfig into a TaskConfig.
 func decodeRawTask(prefix string, in *RawTaskConfig) (*TaskConfig, error) {
 	pn := p(prefix, in.Name)
 	props, err := decodeRawProperties(pn, in.Properties)
@@ -219,6 +238,7 @@ func decodeRawTask(prefix string, in *RawTaskConfig) (*TaskConfig, error) {
 	}, nil
 }
 
+// decodeRawTarget converts a RawTargetConfig into a TargetConfig.
 func decodeRawTarget(prefix string, in *RawTargetConfig) (*TargetConfig, error) {
 	pn := p(prefix, in.Name)
 	props, err := decodeRawProperties(pn, in.Properties)
