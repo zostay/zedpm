@@ -80,7 +80,7 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 	}
 
 	plugin.Logger(ctx,
-		"operaiton", "CheckGitCleanliness",
+		"operation", "CheckGitCleanliness",
 		"headRef", headRef,
 		"masterRef", masterRef,
 	).Info("Git working tree is clean for release.")
