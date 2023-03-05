@@ -30,15 +30,15 @@ const (
 // Linter is the object with methods for performing changelog linting. The
 // expected format for changelogs being linted by this method looks like this:
 //
-//  WIP  TBD
+//	WIP  TBD
 //
-//   * This is a change line for the work in progress.
-//   * This is a long line that will end up wrapped in the file because it is
-//     long and long lines are tedious if you have to scroll horizontally.
+//	 * This is a change line for the work in progress.
+//	 * This is a long line that will end up wrapped in the file because it is
+//	   long and long lines are tedious if you have to scroll horizontally.
 //
-//  v1.0  2023-03-04
+//	v1.0  2023-03-04
 //
-//   * This is the change for the latest release.
+//	 * This is the change for the latest release.
 //
 // A changelog is made up of one or more sections. Each section starts with a
 // heading of the form "<vstring> <date>" with exactly two spaces between the
@@ -93,17 +93,20 @@ func NewLinter(r io.Reader, mode CheckMode) *Linter {
 	return &Linter{r, mode}
 }
 
+// checkStatus is an internal structure used to track the current state of
+// linter as each line is processed.
 type checkStatus struct {
-	previousVersion *semver.Version
-	previousDate    string
-	previousLine    int
+	previousVersion *semver.Version // the semantic version last read from a section head.
+	previousDate    string          // the date last read from a section head.
+	previousLine    int             // the line number of the last read section head.
 
-	previousLineWasBlank  bool
-	previousLineWasBullet bool
+	previousLineWasBlank  bool // true when the current line follows a blank line
+	previousLineWasBullet bool // true when the current line follows a bullet line (start or continuation)
 
-	Failures
+	Failures // the accumulated list of failures
 }
 
+// fail adds a new failure to the checkStatus.
 func (s *checkStatus) fail(
 	lineNumber int,
 	msg string,
@@ -114,6 +117,7 @@ func (s *checkStatus) fail(
 	s.Failures = append(s.Failures, Failure{lineNumber, msg})
 }
 
+// failf adds a new failure to the checkStatus with printf formatting.
 func (s *checkStatus) failf(
 	lineNumber int,
 	f string,
@@ -144,13 +148,15 @@ func (l *Linter) Check() error {
 }
 
 var (
-	versionHeading      = regexp.MustCompile(`^v(\d\S+) {2}(20\d\d-\d\d-\d\d)$`)
-	logLineStart        = regexp.MustCompile(`^ \* (.*)$`)
-	logLineContinuation = regexp.MustCompile(`^ {3}(.*)$`)
-	blankLine           = regexp.MustCompile(`^$`)
-	whitespaceLine      = regexp.MustCompile(`^\s+$`)
+	versionHeading      = regexp.MustCompile(`^v(\d\S+) {2}(20\d\d-\d\d-\d\d)$`) // "vstring  date" lines
+	logLineStart        = regexp.MustCompile(`^ \* (.*)$`)                       // bullet start lines
+	logLineContinuation = regexp.MustCompile(`^ {3}(.*)$`)                       // bullet continuation lines
+	blankLine           = regexp.MustCompile(`^$`)                               // completely empty lines
+	whitespaceLine      = regexp.MustCompile(`^\s+$`)                            // lines containing whitespace
 )
 
+// checkLine is the workhorse function that checks that each line makes sense
+// given the current status of the checks up to this point.
 func (l *Linter) checkLine(
 	lineNumber int,
 	line string,
