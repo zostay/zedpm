@@ -22,6 +22,8 @@ func init() {
 	// runCmd.PersistentFlags().Bool("dry-run", false, "describe what would happen if the command run without doing it")
 }
 
+// RunGoal returns a command runner for cobra that will execute a particular
+// goal or subtask.
 func RunGoal(
 	e *master.InterfaceExecutor,
 	group *master.TaskGroup,

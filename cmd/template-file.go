@@ -15,6 +15,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO Move this code into helper code and/or plugins.
+//
+// This is vestigial code from the original-original pm command that is part of
+// my go-email project.
+
 var templateFileCmd = &cobra.Command{
 	Use:   "template-file <infile> <outfile>",
 	Short: "output a template file using project details",

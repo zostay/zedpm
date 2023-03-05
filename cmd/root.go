@@ -22,6 +22,8 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
+// Execute locates and loads configuration, loads the configured plugins, sets
+// up the root command, and attaches the various run subcommands.
 func Execute() {
 	cfg, err := config2.LocateAndLoad()
 	if err != nil {

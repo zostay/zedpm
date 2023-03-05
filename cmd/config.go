@@ -12,6 +12,9 @@ import (
 	"github.com/zostay/zedpm/plugin/metal"
 )
 
+// configureTasks ests up the master plugin interface and plugin executor. Then,
+// it contacts each plugin to see what it implements and uses that information
+// to configure the available run subcommands on the command-line.
 func configureTasks(
 	cfg *config.Config,
 	plugins metal.Clients,
@@ -48,6 +51,8 @@ func configureTasks(
 	return nil
 }
 
+// configureTaskCommand builds and returns the configuration for a single
+// subcommand for a given subtask.
 func configureTaskCommand(
 	group *master.TaskGroup,
 	e *master.InterfaceExecutor,
@@ -64,6 +69,8 @@ func configureTaskCommand(
 	}
 }
 
+// configureGoalCommand builds and returns the configuration for a single
+// subcommand for a given goal.
 func configureGoalCommand(
 	group *master.TaskGroup,
 	e *master.InterfaceExecutor,
