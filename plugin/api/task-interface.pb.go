@@ -20,11 +20,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Config is used to pass properties from the master process to each plugin and
+// also for each plugin to pass changes back upstream to the master.
 type Config struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The values are string property values. Each key is a dot-separated string
+	// of keys and sub-keys. The values are the best serialized value for the
+	// value to set.
 	Values map[string]string `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -67,6 +72,8 @@ func (x *Config) GetValues() map[string]string {
 	return nil
 }
 
+// Descriptor provides definitions defining the goals and tasks supported by a
+// plugin.
 type Descriptor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -105,6 +112,7 @@ func (*Descriptor) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{1}
 }
 
+// Task is just a namespace container for task-related messages.
 type Task struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -143,13 +151,18 @@ func (*Task) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2}
 }
 
+// Descriptor.Goal describes a goal.
 type Descriptor_Goal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name    string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Short   string   `protobuf:"bytes,2,opt,name=short,proto3" json:"short,omitempty"`
+	// This is the name of the goal.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is a short description of what the goal is meant to archive.
+	Short string `protobuf:"bytes,2,opt,name=short,proto3" json:"short,omitempty"`
+	// This is a list of zero or more aliases that can be used to perform this
+	// same goal.
 	Aliases []string `protobuf:"bytes,3,rep,name=aliases,proto3" json:"aliases,omitempty"`
 }
 
@@ -206,13 +219,21 @@ func (x *Descriptor_Goal) GetAliases() []string {
 	return nil
 }
 
+// Descriptor.Task describes a task, which is part of a goal.
 type Descriptor_Task struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name     string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Short    string   `protobuf:"bytes,3,opt,name=short,proto3" json:"short,omitempty"`
+	// This is the full path describing the name of the task. The first element
+	// of the path should be the name of the goal this task belongs to and the
+	// path must start with a slash.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// This is the short description of what the task does. This should be a
+	// very short phrase.
+	Short string `protobuf:"bytes,3,opt,name=short,proto3" json:"short,omitempty"`
+	// This is a list of zero or more task paths of tasks that must be performed
+	// prior to executing this task. These other tasks must be in the same goal.
 	Requires []string `protobuf:"bytes,4,rep,name=requires,proto3" json:"requires,omitempty"`
 }
 
@@ -269,6 +290,7 @@ func (x *Descriptor_Task) GetRequires() []string {
 	return nil
 }
 
+// Task.Implements is a namespace container for task implementation messages.
 type Task_Implements struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -307,6 +329,7 @@ func (*Task_Implements) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 0}
 }
 
+// Task.Goal is a namespace container for goal definition mesages.
 type Task_Goal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -345,12 +368,16 @@ func (*Task_Goal) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 1}
 }
 
+// Task.Ref is used to refer to a task state while executing an task.
 type Task_Ref struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name    string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is the name of the task being executed.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is an arbitrary identifier used to identify which plugin state is
+	// being executed.
 	StateId string `protobuf:"bytes,2,opt,name=state_id,json=stateId,proto3" json:"state_id,omitempty"`
 }
 
@@ -400,6 +427,8 @@ func (x *Task_Ref) GetStateId() string {
 	return ""
 }
 
+// Task.Prepare is the namespace container for messages used with the
+// Prepare() function.
 type Task_Prepare struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -438,6 +467,8 @@ func (*Task_Prepare) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 3}
 }
 
+// Task.Cancel is the namespace container for messages used with the Cancel()
+// function.
 type Task_Cancel struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -476,6 +507,7 @@ func (*Task_Cancel) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 4}
 }
 
+// Task.Complete is the namespace container for messages used with Complete().
 type Task_Complete struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -514,6 +546,7 @@ func (*Task_Complete) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 5}
 }
 
+// Task.Operation is the namespace container for various operation calls.
 type Task_Operation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -552,6 +585,7 @@ func (*Task_Operation) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 6}
 }
 
+// Task.SubStage is the namespace container for sub-stage operations.
 type Task_SubStage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -590,11 +624,14 @@ func (*Task_SubStage) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 7}
 }
 
+// Task.Implements.Response is the response for the Implements() function.
 type Task_Implements_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// This is the list of task descriptors for all tasks implemented by a
+	// plugin.
 	Tasks []*Descriptor_Task `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
 }
 
@@ -637,6 +674,8 @@ func (x *Task_Implements_Response) GetTasks() []*Descriptor_Task {
 	return nil
 }
 
+// Task.Implements.Request is the request passed to the Implements()
+// function.
 type Task_Implements_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -675,11 +714,13 @@ func (*Task_Implements_Request) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 0, 1}
 }
 
+// Task.Goal.Response is the response for the Goal() function.
 type Task_Goal_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// This is the definition for the goal.
 	Definition *Descriptor_Goal `protobuf:"bytes,1,opt,name=definition,proto3" json:"definition,omitempty"`
 }
 
@@ -722,11 +763,13 @@ func (x *Task_Goal_Response) GetDefinition() *Descriptor_Goal {
 	return nil
 }
 
+// Task.Goal.Request is the request for the Goal() function.
 type Task_Goal_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// This is the name of the goal to request information about.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -769,12 +812,15 @@ func (x *Task_Goal_Request) GetName() string {
 	return ""
 }
 
+// Task.Prepare.Request is the request passed to the Prepare() function.
 type Task_Prepare_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name         string  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is the name of the task to execute.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is the global configuration to use with this task.
 	GlobalConfig *Config `protobuf:"bytes,2,opt,name=global_config,json=globalConfig,proto3" json:"global_config,omitempty"`
 }
 
@@ -824,12 +870,18 @@ func (x *Task_Prepare_Request) GetGlobalConfig() *Config {
 	return nil
 }
 
+// Task.Prepare.Response is the response returned from the Prepare()
+// function.
 type Task_Prepare_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Task    *Task_Ref         `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the task reference that will need to be passed when executing
+	// each operation of the task.
+	Task *Task_Ref `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This contains any initial storage updates that the plugin wishes to add
+	// to the properties used while executing this task.
 	Storage map[string]string `protobuf:"bytes,2,rep,name=storage,proto3" json:"storage,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -879,12 +931,16 @@ func (x *Task_Prepare_Response) GetStorage() map[string]string {
 	return nil
 }
 
+// Task.Cancel.Request is the request object to pass to the Cancel()
+// function.
 type Task_Cancel_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Task    *Task_Ref         `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the task state to cancel.
+	Task *Task_Ref `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the latest storage provided to the plugin.
 	Storage map[string]string `protobuf:"bytes,2,rep,name=storage,proto3" json:"storage,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -934,6 +990,7 @@ func (x *Task_Cancel_Request) GetStorage() map[string]string {
 	return nil
 }
 
+// Task.Cancel.Response is the response object returned from Cancel().
 type Task_Cancel_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -972,12 +1029,15 @@ func (*Task_Cancel_Response) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 4, 1}
 }
 
+// Task.Complete.Request is the request object to pass to Complete().
 type Task_Complete_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Task    *Task_Ref         `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the task state to mark completed.
+	Task *Task_Ref `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the latest storage provided to the plugin.
 	Storage map[string]string `protobuf:"bytes,2,rep,name=storage,proto3" json:"storage,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1027,6 +1087,7 @@ func (x *Task_Complete_Request) GetStorage() map[string]string {
 	return nil
 }
 
+// Task.Complete.Response is the response object returned from Complete().
 type Task_Complete_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1065,12 +1126,15 @@ func (*Task_Complete_Response) Descriptor() ([]byte, []int) {
 	return file_task_interface_proto_rawDescGZIP(), []int{2, 5, 1}
 }
 
+// Task.Operation.Request describes the operation state for execution.
 type Task_Operation_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Task    *Task_Ref         `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the task state in which to perform the operation.
+	Task *Task_Ref `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	// This is the storage as updated during the previous stage.
 	Storage map[string]string `protobuf:"bytes,2,rep,name=storage,proto3" json:"storage,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1120,11 +1184,14 @@ func (x *Task_Operation_Request) GetStorage() map[string]string {
 	return nil
 }
 
+// Task.Operation.Response describes the result for an execution.
 type Task_Operation_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// This is the properties to apply to storage for use with the next
+	// stage.
 	StorageUpdate map[string]string `protobuf:"bytes,2,rep,name=storage_update,json=storageUpdate,proto3" json:"storage_update,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1167,11 +1234,15 @@ func (x *Task_Operation_Response) GetStorageUpdate() map[string]string {
 	return nil
 }
 
+// Task.SubStage.Response is the response from preparing a
+// prioritized-operation stage.
 type Task_SubStage_Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// These are the priority stages that this plugin implements for this
+	// task.
 	ProvidedOrders []int32 `protobuf:"varint,1,rep,packed,name=provided_orders,json=providedOrders,proto3" json:"provided_orders,omitempty"`
 }
 
@@ -1214,13 +1285,16 @@ func (x *Task_SubStage_Response) GetProvidedOrders() []int32 {
 	return nil
 }
 
+// Task.SubStage>Request is the request to initiate a sub-stage operation.
 type Task_SubStage_Request struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Request  *Task_Operation_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
-	SubStage int32                   `protobuf:"varint,2,opt,name=sub_stage,json=subStage,proto3" json:"sub_stage,omitempty"`
+	// This is the operation to request.
+	Request *Task_Operation_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	// This is the sub-stage of tha toperation to execute.
+	SubStage int32 `protobuf:"varint,2,opt,name=sub_stage,json=subStage,proto3" json:"sub_stage,omitempty"`
 }
 
 func (x *Task_SubStage_Request) Reset() {

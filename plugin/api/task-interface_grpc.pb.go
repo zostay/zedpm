@@ -22,18 +22,31 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaskExecutionClient interface {
+	// Implements maps onto the plugin.Interface.Implements method.
 	Implements(ctx context.Context, in *Task_Implements_Request, opts ...grpc.CallOption) (*Task_Implements_Response, error)
+	// Goal maps onto the plugin.Interface.Goal method.
 	Goal(ctx context.Context, in *Task_Goal_Request, opts ...grpc.CallOption) (*Task_Goal_Response, error)
+	// Prepare maps onto the plugin.Interface.Prepare method.
 	Prepare(ctx context.Context, in *Task_Prepare_Request, opts ...grpc.CallOption) (*Task_Prepare_Response, error)
+	// Cancel maps onto the plugin.Interface.Cancel method.
 	Cancel(ctx context.Context, in *Task_Cancel_Request, opts ...grpc.CallOption) (*Task_Cancel_Response, error)
+	// Complete maps onto the plugin.Interface.Complete method.
 	Complete(ctx context.Context, in *Task_Complete_Request, opts ...grpc.CallOption) (*Task_Complete_Response, error)
+	// ExecuteCheck maps onto the plugin.Task.Check method.
 	ExecuteCheck(ctx context.Context, in *Task_Operation_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error)
+	// PrepareBegin maps onto the plugin.Task.Begin method.
 	PrepareBegin(ctx context.Context, in *Task_Ref, opts ...grpc.CallOption) (*Task_SubStage_Response, error)
+	// ExecuteBegin executes operations related to the plugin.Task.Begin method.
 	ExecuteBegin(ctx context.Context, in *Task_SubStage_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error)
+	// PrepareRun maps onto the plugin.Task.Run method.
 	PrepareRun(ctx context.Context, in *Task_Ref, opts ...grpc.CallOption) (*Task_SubStage_Response, error)
+	// ExecuteRun executes operations related to the plugin.Task.Run method.
 	ExecuteRun(ctx context.Context, in *Task_SubStage_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error)
+	// PrepareEnd maps onto the plugin.Task.End method.
 	PrepareEnd(ctx context.Context, in *Task_Ref, opts ...grpc.CallOption) (*Task_SubStage_Response, error)
+	// ExecuteEnd executes operations related to the plugin.Task.End method.
 	ExecuteEnd(ctx context.Context, in *Task_SubStage_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error)
+	// ExecuteFinish maps onto the plugin.Task.Finish method.
 	ExecuteFinish(ctx context.Context, in *Task_Operation_Request, opts ...grpc.CallOption) (*Task_Operation_Response, error)
 }
 
@@ -166,18 +179,31 @@ func (c *taskExecutionClient) ExecuteFinish(ctx context.Context, in *Task_Operat
 // All implementations must embed UnimplementedTaskExecutionServer
 // for forward compatibility
 type TaskExecutionServer interface {
+	// Implements maps onto the plugin.Interface.Implements method.
 	Implements(context.Context, *Task_Implements_Request) (*Task_Implements_Response, error)
+	// Goal maps onto the plugin.Interface.Goal method.
 	Goal(context.Context, *Task_Goal_Request) (*Task_Goal_Response, error)
+	// Prepare maps onto the plugin.Interface.Prepare method.
 	Prepare(context.Context, *Task_Prepare_Request) (*Task_Prepare_Response, error)
+	// Cancel maps onto the plugin.Interface.Cancel method.
 	Cancel(context.Context, *Task_Cancel_Request) (*Task_Cancel_Response, error)
+	// Complete maps onto the plugin.Interface.Complete method.
 	Complete(context.Context, *Task_Complete_Request) (*Task_Complete_Response, error)
+	// ExecuteCheck maps onto the plugin.Task.Check method.
 	ExecuteCheck(context.Context, *Task_Operation_Request) (*Task_Operation_Response, error)
+	// PrepareBegin maps onto the plugin.Task.Begin method.
 	PrepareBegin(context.Context, *Task_Ref) (*Task_SubStage_Response, error)
+	// ExecuteBegin executes operations related to the plugin.Task.Begin method.
 	ExecuteBegin(context.Context, *Task_SubStage_Request) (*Task_Operation_Response, error)
+	// PrepareRun maps onto the plugin.Task.Run method.
 	PrepareRun(context.Context, *Task_Ref) (*Task_SubStage_Response, error)
+	// ExecuteRun executes operations related to the plugin.Task.Run method.
 	ExecuteRun(context.Context, *Task_SubStage_Request) (*Task_Operation_Response, error)
+	// PrepareEnd maps onto the plugin.Task.End method.
 	PrepareEnd(context.Context, *Task_Ref) (*Task_SubStage_Response, error)
+	// ExecuteEnd executes operations related to the plugin.Task.End method.
 	ExecuteEnd(context.Context, *Task_SubStage_Request) (*Task_Operation_Response, error)
+	// ExecuteFinish maps onto the plugin.Task.Finish method.
 	ExecuteFinish(context.Context, *Task_Operation_Request) (*Task_Operation_Response, error)
 	mustEmbedUnimplementedTaskExecutionServer()
 }
