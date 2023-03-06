@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/zostay/zedpm/config"
 )
 
 var (
@@ -68,20 +70,33 @@ type TaskDescription interface {
 	Requires() []string
 }
 
+// GoalName validates the correctness of the TaskDescription.Name of the task
+// and then returns just the goal name from that task path.
 func GoalName(task TaskDescription) (string, error) {
-	name := task.Name()
+	taskPath := task.Name()
+	err := validateTaskPath(taskPath)
+	if err != nil {
+		return "", err
+	}
+
+	goal, _ := config.GoalAndTaskNames(taskPath)
+	return goal, nil
+}
+
+// validateTaskPath is an internal function that validates the given task path.
+func validateTaskPath(name string) error {
 	if name[0] != '/' {
-		return "", fmt.Errorf("%s: %w", task.Name(), ErrBadTaskName)
+		return fmt.Errorf("%s: %w", name, ErrBadTaskName)
 	}
 
 	name = name[1:]
 
 	idx := strings.IndexRune(name, '/')
 	if idx < 0 {
-		return "", fmt.Errorf("%s: %w", task.Name(), ErrBadTaskName)
+		return fmt.Errorf("%s: %w", name, ErrBadTaskName)
 	}
 
-	return name[:idx], nil
+	return nil
 }
 
 // Interface is the base interface that all plugins implement.

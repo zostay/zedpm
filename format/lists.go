@@ -5,7 +5,10 @@ import (
 	"strings"
 )
 
+// And connects the given values together in an English list using an "and" as a
+// conjunction and an Oxford comma.
 func And(values ...string) string {
+	// TODO This should be replaced with proper localization.
 	if len(values) == 0 {
 		return ""
 	} else if len(values) == 1 {
