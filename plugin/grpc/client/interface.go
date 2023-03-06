@@ -9,16 +9,22 @@ import (
 	"github.com/zostay/zedpm/plugin/translate"
 )
 
+// Verifies that Interface is a plugin.Interface.
 var _ plugin.Interface = &Interface{}
 
+// Interface implements plugin.Interface to map calls to that interface onto
+// calls to the api.TaskExecutionClient.
 type Interface struct {
 	client api.TaskExecutionClient
 }
 
+// NewGRPCTaskInterface returns a new plugin.Interface wrapper around
+// api.TaskExecutionClient.
 func NewGRPCTaskInterface(client api.TaskExecutionClient) *Interface {
 	return &Interface{client}
 }
 
+// Implements calls the Implements gRPC service method.
 func (c *Interface) Implements(
 	ctx context.Context,
 ) ([]plugin.TaskDescription, error) {
@@ -29,6 +35,7 @@ func (c *Interface) Implements(
 	return translate.APITaskDescriptorsToPluginTaskDescriptions(res.GetTasks()), nil
 }
 
+// Goal calls the Goal gRPC service method.
 func (c *Interface) Goal(
 	ctx context.Context,
 	goalName string,
@@ -45,6 +52,7 @@ func (c *Interface) Goal(
 	return translate.APIGoalDescriptorToPluginGoalDescription(res.GetDefinition()), nil
 }
 
+// Prepare calls the Prepare gRPC service method.
 func (c *Interface) Prepare(
 	ctx context.Context,
 	taskName string,
@@ -70,6 +78,7 @@ func (c *Interface) Prepare(
 	}, nil
 }
 
+// Cancel calls the Cancel gRPC srvice method.
 func (c *Interface) Cancel(
 	ctx context.Context,
 	task plugin.Task,
@@ -82,6 +91,7 @@ func (c *Interface) Cancel(
 	return err
 }
 
+// Complete calls the Complete gRPC method.
 func (c *Interface) Complete(
 	ctx context.Context,
 	task plugin.Task,
