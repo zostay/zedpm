@@ -13,13 +13,20 @@ import (
 	"github.com/zostay/zedpm/storage"
 )
 
+// Verifies that TaskExecution implements api.TaskExecutionServer.
 var _ api.TaskExecutionServer = &TaskExecution{}
 
+// TaskState is used to track the task state for a running plugin task.
 type TaskState struct {
-	Task    plugin.Task
+	// Task is the plugin.Task object that is being executed for this task state.
+	Task plugin.Task
+
+	// Context is the plugin.Context used when executing this task.
 	Context *plugin.Context
 }
 
+// TaskExecution implements api.TaskExecutionServer and maps incoming gRPC
+// service calls to the plugin.Interface.
 type TaskExecution struct {
 	api.UnimplementedTaskExecutionServer
 
@@ -27,6 +34,8 @@ type TaskExecution struct {
 	state map[string]map[string]*TaskState
 }
 
+// NewGRPCTaskExecution returns a new TaskExecution object that will map
+// incoming gRPC service calls to a plugin.Interface implementation.
 func NewGRPCTaskExecution(impl plugin.Interface) *TaskExecution {
 	taskDescs, err := impl.Implements(context.Background())
 	if err != nil {
@@ -44,10 +53,14 @@ func NewGRPCTaskExecution(impl plugin.Interface) *TaskExecution {
 	}
 }
 
+// generateStateId is the internal function used to generate state_id returned
+// as part of a task reference.
 func generateStateId() string {
 	return ulid.Make().String()
 }
 
+// Implements maps the gRPC Implements service method to the Implements method
+// of plugin.Interface.
 func (s *TaskExecution) Implements(
 	ctx context.Context,
 	_ *api.Task_Implements_Request,
@@ -61,6 +74,8 @@ func (s *TaskExecution) Implements(
 	}, nil
 }
 
+// Goal maps the gRPC Goal service method to the Goal method of
+// plugin.Interface.
 func (s *TaskExecution) Goal(
 	ctx context.Context,
 	request *api.Task_Goal_Request,
@@ -78,6 +93,8 @@ func (s *TaskExecution) Goal(
 	}, nil
 }
 
+// Prepare maps the gRPC Prepare service method to the Prepare method of
+// plugin.Interface.
 func (s *TaskExecution) Prepare(
 	ctx context.Context,
 	request *api.Task_Prepare_Request,
@@ -122,6 +139,7 @@ func (s *TaskExecution) Prepare(
 	}, nil
 }
 
+// deref takes an incoming task reference and turns it into a TaskState object.
 func (s *TaskExecution) deref(ref *api.Task_Ref) (*TaskState, error) {
 	name := ref.GetName()
 	id := ref.GetStateId()
@@ -133,6 +151,8 @@ func (s *TaskExecution) deref(ref *api.Task_Ref) (*TaskState, error) {
 	return task, nil
 }
 
+// closeTask performs final operations on a task, performs cleanup, and deletes
+// the task reference from the internal state cache.
 func (s *TaskExecution) closeTask(
 	ctx context.Context,
 	taskRef *api.Task_Ref,
@@ -172,6 +192,8 @@ func (s *TaskExecution) closeTask(
 	return err
 }
 
+// Cancel implements the Cancel gRPC service method and performs final cleanup
+// necessary for cancelling a task.
 func (s *TaskExecution) Cancel(
 	ctx context.Context,
 	request *api.Task_Cancel_Request,
@@ -183,6 +205,8 @@ func (s *TaskExecution) Cancel(
 	return &api.Task_Cancel_Response{}, nil
 }
 
+// Complete implements the Complete gRPC service method and performs final
+// cleanup necessary for completing a task.
 func (s *TaskExecution) Complete(
 	ctx context.Context,
 	request *api.Task_Complete_Request,
