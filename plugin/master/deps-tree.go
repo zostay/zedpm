@@ -7,17 +7,26 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
+// DepNode is a vertex in the directed acyclic graph that is used to track task
+// requirements for use in ordering tasks.
 type DepNode struct {
-	Path  string
+	// Path is the task path for a task.
+	Path string
+
+	// Tasks is the list of tasks that the task named by Path requires to run
+	// before it runs.
 	Tasks []plugin.TaskDescription
 }
 
-type DepsTree struct {
+// DepsGraph is (intended to be) a directed acyclic graph that tracks the
+// requirements dependencies between tasks.
+type DepsGraph struct {
 	root  string
 	nodes map[string]*DepNode
 	edges map[string][]string
 }
 
+// addEdge adds a new edge to the DAG.
 func addEdge(edges map[string][]string, from, to string) {
 	if _, hasEdgeFrom := edges[from]; hasEdgeFrom {
 		edges[from] = append(edges[from], to)
@@ -26,6 +35,9 @@ func addEdge(edges map[string][]string, from, to string) {
 	}
 }
 
+// edgeIndex finds the index of the given edge in the DAG--where index means the
+// index into the slice of the the edge at from. Returns -1 if no such edge
+// exists.
 func edgeIndex(edges map[string][]string, from, to string) int {
 	if _, hasEdgeFrom := edges[from]; !hasEdgeFrom {
 		return -1
@@ -41,6 +53,7 @@ func edgeIndex(edges map[string][]string, from, to string) int {
 
 }
 
+// deleteEdge deletes an edge from the DAG.
 func deleteEdge(edges map[string][]string, from, to string) {
 	for {
 		i := edgeIndex(edges, from, to)
@@ -58,6 +71,7 @@ func deleteEdge(edges map[string][]string, from, to string) {
 	}
 }
 
+// copyEdges creates a deep copy of the DAG edges.
 func copyEdges(dst, src map[string][]string) {
 	for from, tos := range src {
 		dst[from] = make([]string, len(tos))
@@ -65,7 +79,25 @@ func copyEdges(dst, src map[string][]string) {
 	}
 }
 
-func NewDepsTree(goal string, tasks []plugin.TaskDescription) *DepsTree {
+// NewDepsGraph constructs a DepsGraph for the named goal with the given tasks.
+// This immediately configures the direct acyclic graph (DAG) kept by the
+// DepsGraph object.
+//
+// This DAG is setup with two sets of dependencies:
+//
+//  1. Hierarchical dependencies exist to goal from task from sub-task from
+//     sub-sub-task and so on. That is, a sub-sub-task has a directed edge to its
+//     parent sub-task, which has a directed edge to its parent task, which has a
+//     directed edge to its parent goal.
+//
+//  2. Requirements dependencies exist from required task to task doing the
+//     requiring. That is, if /release/publish requires /release/mint, there
+//     exists an edge in the DAG pointing fro /release/mint to /release/publish.
+//
+// The contained DAG has the relationship of requirements inverted. The most
+// required node will have no edges pointing to it. Anything that requires
+// something else will have one or more edges pointing at it in the graph.
+func NewDepsGraph(goal string, tasks []plugin.TaskDescription) *DepsGraph {
 	nodes := make(map[string]*DepNode, len(tasks))
 	edges := make(map[string][]string, len(tasks))
 	goalPath := "/" + goal
@@ -110,10 +142,38 @@ func NewDepsTree(goal string, tasks []plugin.TaskDescription) *DepsTree {
 		}
 	}
 
-	return &DepsTree{goalPath, nodes, edges}
+	return &DepsGraph{goalPath, nodes, edges}
 }
 
-func (d *DepsTree) GroupOrder() ([][]plugin.TaskDescription, error) {
+// GroupOrder constructs an ordered list of plugin.TaskDescription groups based
+// upon the DAG stored in DepsGraph. In the DAG, the most required ndoes
+// (verticed) will have no edges directed to them. Therefore, to produce a set
+// of tasks that are grouped and ordered, we do the following:
+//
+//  1. Find all unmarked nodes that have no edges pointing to them by unmarked
+//     nodes. This becomes the next slice of plugin.TaskDescription objects.
+//
+//  2. Mark all the nodes found in (1).
+//
+//  3. Repeat (1) and (2) until all nodes are marked.
+//
+// The result is a slice of slices of plugin.TaskDescription objects, which
+// represent tasks that can safely be run concurrently.
+//
+// Along the way, at least two error conditions could be encountered, which sill
+// result in this method failing with an error:
+//
+//  1. If an edge is encountered that refers to a node that does not exist (e.g.,
+//     a plugin.TaskDescription has a requirement that belongs to another goal),
+//     an error is returned. A failed requirement indicates either a issing
+//     plugin dependency or a plugin that contains a serious bug.
+//
+//  2. If while looking for unmarked nodes that have no edges poining to them by
+//     unmarked nodes we run into a case where we get zero such nodes, but the
+//     number of unmarked nodes is non-zero, then we have a cycle. This is a
+//     directed acyclic graph. A cycle indicates that some plugin contains a
+//     serious bug.
+func (d *DepsGraph) GroupOrder() ([][]plugin.TaskDescription, error) {
 	workEdges := make(map[string][]string, len(d.edges))
 	copyEdges(workEdges, d.edges)
 

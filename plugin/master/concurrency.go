@@ -5,6 +5,10 @@ import (
 	"sync"
 )
 
+// RunTasksAndAccumulate runs the task function for each input returned by the
+// Iterable. Each task is run concurrently. The results and errors are
+// accumulated. The accumulator values and errors and returned once all tasks
+// have completed.
 func RunTasksAndAccumulate[Idx comparable, In, Out any](
 	ctx context.Context,
 	inputs Iterable[Idx, In],
@@ -59,6 +63,9 @@ WaitLoop:
 	return results, accErr
 }
 
+// RunTasksAndAccumulateErrors runs all the given task against all the inputs
+// concurrently. Then it returns any errors that were returned by any of those
+// tasks.
 func RunTasksAndAccumulateErrors[Idx comparable, In any](
 	ctx context.Context,
 	inputs Iterable[Idx, In],

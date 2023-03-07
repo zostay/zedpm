@@ -19,7 +19,7 @@ type TaskGroup struct {
 // executed concurrently as a unit. Each group must finish before the next group
 // starts.
 func (g *TaskGroup) ExecutionGroups() ([][]plugin.TaskDescription, error) {
-	tree := NewDepsTree(g.Goal.Name(), g.Tasks)
+	tree := NewDepsGraph(g.Goal.Name(), g.Tasks)
 	return tree.GroupOrder()
 }
 
