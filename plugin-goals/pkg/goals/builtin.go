@@ -1,7 +1,5 @@
 package goals
 
-import "github.com/zostay/zedpm/storage"
-
 const (
 	NameBuild    = "build"
 	NameDeploy   = "deploy"
@@ -13,11 +11,6 @@ const (
 	NameRelease  = "release"
 	NameRequest  = "request"
 	NameTest     = "test"
-)
-
-const (
-	PropertyReleaseDescription = "release.description"
-	PropertyExportPrefix       = storage.ExportPrefix
 )
 
 func DescribeBuild() *GoalDescription {

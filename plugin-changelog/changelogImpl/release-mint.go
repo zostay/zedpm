@@ -7,20 +7,22 @@ import (
 	"os"
 
 	"github.com/zostay/zedpm/plugin"
+	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
+// ReleaseMintTask is the implementation of the /release/mint/changelog task.
 type ReleaseMintTask struct {
 	plugin.TaskBoilerplate
 }
 
 // FixupChangelog alters the changelog to prepare it for release.
 func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
-	r, err := os.Open(Changelog(ctx))
+	r, err := os.Open(GetPropertyChangelogFile(ctx))
 	if err != nil {
-		return fmt.Errorf("unable to open %s: %w", Changelog(ctx), err)
+		return fmt.Errorf("unable to open %s: %w", GetPropertyChangelogFile(ctx), err)
 	}
 
-	newChangelog := Changelog(ctx) + ".new"
+	newChangelog := GetPropertyChangelogFile(ctx) + ".new"
 
 	w, err := os.Create(newChangelog)
 	if err != nil {
@@ -33,8 +35,9 @@ func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
 	for sc.Scan() {
 		line := sc.Text()
 		if line == "WIP" || line == "WIP  TBD" {
-			version := plugin.GetString(ctx, "release.version")
-			today := plugin.GetString(ctx, "release.date")
+			version := goals.GetPropertyReleaseVersion(ctx)
+			todayTime := goals.GetPropertyReleaseDate(ctx)
+			today := todayTime.Format("2006-01-02")
 			_, _ = fmt.Fprintf(w, "v%s  %s\n", version, today)
 		} else {
 			_, _ = fmt.Fprintln(w, line)
@@ -47,24 +50,38 @@ func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
 		return fmt.Errorf("unable to close %s: %w", newChangelog, err)
 	}
 
-	err = os.Rename(newChangelog, Changelog(ctx))
+	err = os.Rename(newChangelog, GetPropertyChangelogFile(ctx))
 	if err != nil {
-		return fmt.Errorf("unable to overwrite %s with %s: %w", Changelog(ctx), newChangelog, err)
+		return fmt.Errorf("unable to overwrite %s with %s: %w", GetPropertyChangelogFile(ctx), newChangelog, err)
 	}
 
-	plugin.ToAdd(ctx, Changelog(ctx))
+	plugin.ToAdd(ctx, GetPropertyChangelogFile(ctx))
 
 	plugin.Logger(ctx,
-		"changelog", Changelog(ctx),
+		"changelog", GetPropertyChangelogFile(ctx),
 	).Info("Applied changes to changelog to fixup for release.")
 
 	return nil
 }
 
+// Check lints the changelog for pre-release.
 func (s *ReleaseMintTask) Check(ctx context.Context) error {
+	goals.SetPropertyLintPreRelease(ctx, true)
+	goals.SetPropertyLintRelease(ctx, false)
+
 	return LintChangelog(ctx)
 }
 
+// LintChangelogRelease lints the changelog for release.
+func (s *ReleaseMintTask) LintChangelogRelease(ctx context.Context) error {
+	goals.SetPropertyLintPreRelease(ctx, false)
+	goals.SetPropertyLintRelease(ctx, true)
+
+	return LintChangelog(ctx)
+}
+
+// Run prepares the FixupChangelog and the final LintChangelogRelease
+// operations.
 func (s *ReleaseMintTask) Run(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{
@@ -73,7 +90,7 @@ func (s *ReleaseMintTask) Run(context.Context) (plugin.Operations, error) {
 		},
 		{
 			Order:  55,
-			Action: plugin.OperationFunc(LintChangelog),
+			Action: plugin.OperationFunc(s.LintChangelogRelease),
 		},
 	}, nil
 }

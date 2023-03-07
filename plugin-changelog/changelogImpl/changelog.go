@@ -7,31 +7,37 @@ import (
 
 	"github.com/zostay/zedpm/changes"
 	"github.com/zostay/zedpm/plugin"
+	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
+const (
+	PropertyChangelogFile = "changlog.file"
+)
+
+// DefaultChangelog is the changelog file path to use when none is configured.
 const DefaultChangelog = "Changes.md"
 
-func Changelog(ctx context.Context) string {
-	if plugin.IsSet(ctx, "changelog.file") {
-		return plugin.GetString(ctx, "changelog.file")
+// GetPropertyChangelogFile gets the name of the changelog file from the configuration or
+// returns the default value.
+func GetPropertyChangelogFile(ctx context.Context) string {
+	if plugin.IsSet(ctx, PropertyChangelogFile) {
+		return plugin.GetString(ctx, PropertyChangelogFile)
 	}
 	return DefaultChangelog
 }
 
-func CheckPreRelease(ctx context.Context) bool {
-	return plugin.GetBool(ctx, "lint.prerelease")
-}
-
-func CheckRelease(ctx context.Context) bool {
-	return plugin.GetBool(ctx, "lint.release")
-}
-
+// CheckMode examines the context to determine what mode to use when performing
+// linter checks.
+//
+// If lint.release is set, then it uses changes.CheckRelease. If lint.prerelease
+// is set, then it uses changes.CheckPreRelease. Otherwise, it uses
+// changes.CheckStandard.
 func CheckMode(ctx context.Context) changes.CheckMode {
 	var mode changes.CheckMode
 	switch {
-	case CheckRelease(ctx):
+	case goals.GetPropertyLintRelease(ctx):
 		mode = changes.CheckRelease
-	case CheckPreRelease(ctx):
+	case goals.GetPropertyLintPreRelease(ctx):
 		mode = changes.CheckPreRelease
 	default:
 		mode = changes.CheckStandard
@@ -41,7 +47,7 @@ func CheckMode(ctx context.Context) changes.CheckMode {
 
 // LintChangelog performs a check to ensure the changelog is ready for release.
 func LintChangelog(ctx context.Context) error {
-	changelog, err := os.Open(Changelog(ctx))
+	changelog, err := os.Open(GetPropertyChangelogFile(ctx))
 	if err != nil {
 		return fmt.Errorf("unable to open Changes file: %w", err)
 	}

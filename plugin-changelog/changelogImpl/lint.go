@@ -6,11 +6,13 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
+// LintChangelogTask implements the /lint/changelog task.
 type LintChangelogTask struct {
 	plugin.TaskBoilerplate
 }
 
-func (t *LintChangelogTask) Run(ctx context.Context) (plugin.Operations, error) {
+// Run prepares the system to run the LintChangelog operation.
+func (t *LintChangelogTask) Run(_ context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{
 			Order:  50,
