@@ -12,13 +12,25 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
+// runPluginServerLocally is a variable that can be configured to replace or add
+// a plugin configuration that will be run from the same process as the master
+// process, which can allow for easier debugging.
+//
 // TODO This is a cheap debugging aid, but should be made nicer and configgable somehow for debugging those sticky problems.
 var runPluginServerLocally = map[string]plugin.Interface{}
 
+// Clients represents a list of Hashicorp plugins we are running to implement
+// the plugin interface of zedpm.
 type Clients map[string]*goPlugin.Client
 
+// devModePluginPrefix is the special prefix to note that a plugin is running in
+// developer mode. When running a plugin this way, the DEV_MODE property must be
+// set to "true" globally. This should make it relatively easy to run local
+// plugins and plugins that are under active development.
 const devModePluginPrefix = "go run "
 
+// LoadLocalPlugin will run the plugin server as a goroutine on the local
+// process and connect the master process to it, essentially talking to itself.
 func LoadLocalPlugin(
 	iface plugin.Interface,
 	logger hclog.Logger,
@@ -57,6 +69,8 @@ func LoadLocalPlugin(
 	return client, nil
 }
 
+// LoadDevModePlugin initializes a plugin that is compiled and run in a single
+// step via the "go run" command.
 func LoadDevModePlugin(
 	cfg *config.Config,
 	pcfg *config.PluginConfig,
@@ -73,6 +87,8 @@ func LoadDevModePlugin(
 	return NewGoPluginClient(cmd, logger, stdOut, stdErr), nil
 }
 
+// NewGoPluginClient creates a new Hashicorp plugin client to connect to a
+// single configured plugin.
 func NewGoPluginClient(
 	cmd []string,
 	logger hclog.Logger,
@@ -94,6 +110,8 @@ func NewGoPluginClient(
 	return client
 }
 
+// LoadPlugins will load all the configured plugins by executing their plugin
+// program via the Hashicorp plugin interface for each.
 func LoadPlugins(
 	cfg *config.Config,
 	stdOut *SyncBuffer,
@@ -132,6 +150,8 @@ func LoadPlugins(
 	return clients, nil
 }
 
+// Dispense returns a plugin.Interface for executing parts of a single plugin
+// interface.
 func Dispense(clients Clients, name string) (plugin.Interface, error) {
 	client, err := clients[name].Client()
 	if err != nil {
@@ -147,6 +167,9 @@ func Dispense(clients Clients, name string) (plugin.Interface, error) {
 	return iface, nil
 }
 
+// DispenseAll returns a mapping from plugin name (found in the configuration)
+// to the matching plugin.Interface which is able to execute tasks and operations
+// and so on.
 func DispenseAll(clients Clients) (map[string]plugin.Interface, error) {
 	ifaces := make(map[string]plugin.Interface, len(clients))
 	for name := range clients {
@@ -160,6 +183,7 @@ func DispenseAll(clients Clients) (map[string]plugin.Interface, error) {
 	return ifaces, nil
 }
 
+// KillPlugins will kill all plugins that have been started by LoadPlugins.
 func KillPlugins(clients Clients) {
 	for _, v := range clients {
 		v.Kill()
