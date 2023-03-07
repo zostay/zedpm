@@ -8,9 +8,18 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
+// TaskGroup is used to group either all or some sub-group of a goal's tasks for
+// execution and sorting. For a given load-out of plugins, each TaskGroup is
+// unique for a given Tree. The Tree names a task path.
 type TaskGroup struct {
-	Tree  string
-	Goal  plugin.GoalDescription
+	// Tree names the task path to which this TaskGroup belongs.
+	Tree string
+
+	// Goal is the goal these tasks belong to.
+	Goal plugin.GoalDescription
+
+	// Tasks are the tasks under that goal that are selected by the Tree, given
+	// the current plugin load-out.
 	Tasks []plugin.TaskDescription
 }
 
