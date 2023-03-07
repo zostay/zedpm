@@ -10,15 +10,22 @@ import (
 	"github.com/zostay/zedpm/storage"
 )
 
+// Prove that master.Interface implements plugin.Interface.
 var _ plugin.Interface = &Interface{}
 
+// Interface is a plugin.Interface implementation that aids in the execution of
+// a set of other plugin.Interface implementations. This is combined with the
+// use of InterfaceExecutor to provide a full set of tools for concurrently
+// executing a goal or task.
 type Interface struct {
-	cfg        *config.Config
-	is         map[string]plugin.Interface
-	targetName string
-	properties *storage.KVMem
+	cfg        *config.Config              // the configuration to use during execution
+	is         map[string]plugin.Interface // the plugins to execute
+	targetName string                      // the target to use when choosing configuration
+	properties *storage.KVMem              // temporary properties to hold CLI definitions and definitions that occur during execution
 }
 
+// NewInterface creates a new Interface object for the given configuration and
+// plugins.
 func NewInterface(
 	cfg *config.Config,
 	is map[string]plugin.Interface,
@@ -26,14 +33,19 @@ func NewInterface(
 	return &Interface{cfg, is, "", storage.New()}
 }
 
+// GetInterface retrieves the plugin.Interface for the named plugin.
 func (ti *Interface) GetInterface(name string) plugin.Interface {
 	return ti.is[name]
 }
 
+// SetTargetName changes the target used to select the configuration used during
+// execution.
 func (ti *Interface) SetTargetName(name string) {
 	ti.targetName = name
 }
 
+// Define records a new value to store in the in-memory properties used during
+// interface execution.
 func (ti *Interface) Define(values map[string]string) {
 	vals := make(map[string]any, len(values))
 	for k, v := range values {
@@ -42,6 +54,8 @@ func (ti *Interface) Define(values map[string]string) {
 	ti.properties.Update(vals)
 }
 
+// ctxFor builds a plugin.Context for the current configuration and target and
+// the named task and plugin and associates it with the given context.Context.
 func (ti *Interface) ctxFor(
 	ctx context.Context,
 	taskName string,
@@ -51,6 +65,9 @@ func (ti *Interface) ctxFor(
 	return plugin.InitializeContext(ctx, pctx), pctx
 }
 
+// Implements calls Implements on all the associated plugins and returns a
+// combined list of all the tasks defined by all the plugins. It fails with an
+// error if any plugin fails with an error.
 func (ti *Interface) Implements(ctx context.Context) ([]plugin.TaskDescription, error) {
 	taskDescs := make([]plugin.TaskDescription, 0, 100)
 	for pluginName, iface := range ti.is {
@@ -65,11 +82,16 @@ func (ti *Interface) Implements(ctx context.Context) ([]plugin.TaskDescription, 
 	return taskDescs, nil
 }
 
+// implements is used as an internal check prior to executing Prepare on an
+// associated plugin to ensure that the plugin actually implements that task
+// before we ask it to perform that task. If it does not implement that task, it
+// won't be asked to prepare it.
 func (ti *Interface) implements(
 	ctx context.Context,
 	iface plugin.Interface,
 	taskName string,
 ) (bool, error) {
+	// TODO Would it be better to cache information gathered from Implements instead of making extra calls to the plugin?
 	taskDescs, err := iface.Implements(ctx)
 	if err != nil {
 		return false, err
@@ -83,6 +105,11 @@ func (ti *Interface) implements(
 	return false, nil
 }
 
+// Goal calls Goal for the given goal name on all associated plugins. If no
+// plugin provides a plugin.GoalDescription for this goal, then
+// plugin.ErrUnsupportedGoal is returned. Otherwise, the first GoalDescription
+// received is returned. If multiple plugins describe a goal with the same name,
+// the behavior is non-deterministic.
 func (ti *Interface) Goal(
 	ctx context.Context,
 	name string,
@@ -114,6 +141,10 @@ func (ti *Interface) Goal(
 	return nil, plugin.ErrUnsupportedGoal
 }
 
+// Prepare calls the Prepare method on all plugins which impement the named
+// task. This returns a pointer to a master.Task which is able to execute the
+// task for all these plugins. If no plugin implements the named task, then
+// this method fails with plugin.ErrUnsupportedTask instead.
 func (ti *Interface) Prepare(
 	ctx context.Context,
 	taskName string,
@@ -163,6 +194,8 @@ func (ti *Interface) Prepare(
 	return nil, plugin.ErrUnsupportedTask
 }
 
+// Cancel performs cancellation for task in progress. It works to immediatly
+// terminate and close out any resources held by all associated plugins.
 func (ti *Interface) Cancel(
 	ctx context.Context,
 	pluginTask plugin.Task,
@@ -178,6 +211,10 @@ func (ti *Interface) Cancel(
 		})
 }
 
+// Complete performs completion for the task in progress. It frees up resources
+// held by the master.Interface as well as telling each plugin to free up any
+// resources associated with task execution on their end for all plugins
+// associated with this task.
 func (ti *Interface) Complete(
 	ctx context.Context,
 	pluginTask plugin.Task,
