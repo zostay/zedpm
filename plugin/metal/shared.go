@@ -15,7 +15,7 @@ import (
 // Handshake is the shared Hashicorp plugin handshake object.
 var Handshake = goPlugin.HandshakeConfig{
 	ProtocolVersion:  1,
-	MagicCookieKey:   "ZXPM_PLUGIN_MAGIC_COOKIE",
+	MagicCookieKey:   "ZEDPM_PLUGIN_MAGIC_COOKIE",
 	MagicCookieValue: "Q0aHomIRxbv3sa9jlP28A3juUduYTyUnAh4MQnr3",
 }
 
