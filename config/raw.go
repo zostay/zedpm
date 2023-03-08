@@ -6,7 +6,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 
-	"github.com/zostay/zedpm/storage"
+	"github.com/zostay/zedpm/pkg/storage"
 )
 
 // RawConfig is the configuration specification for HCL. See Config for details

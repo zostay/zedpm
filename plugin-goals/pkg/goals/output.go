@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/zostay/zedpm/storage"
+	"github.com/zostay/zedpm/pkg/storage"
 )
 
 // OutputFormatter is a function that can output a storage.KV to the given io.Writer.

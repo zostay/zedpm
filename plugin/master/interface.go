@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/storage"
 )
 
 // Prove that master.Interface implements plugin.Interface.

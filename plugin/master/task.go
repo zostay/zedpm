@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/storage"
 )
 
 // Verifies that master.Task implements plugin.Task.

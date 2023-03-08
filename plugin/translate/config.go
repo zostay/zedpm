@@ -1,8 +1,8 @@
 package translate
 
 import (
+	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin/api"
-	"github.com/zostay/zedpm/storage"
 )
 
 // APIConfigToKV translates an api.Config object into a storage.KVMem object.

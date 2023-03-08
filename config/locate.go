@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/zostay/zedpm/storage"
+	"github.com/zostay/zedpm/pkg/storage"
 )
 
 // LocateAndLoadHome will load the user-global configuration file from

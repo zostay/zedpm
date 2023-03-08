@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
+	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
-	"github.com/zostay/zedpm/storage"
 )
 
 // Verify that Plugin is an implementation of plugin.Interface.

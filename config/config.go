@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 
-	"github.com/zostay/zedpm/storage"
+	"github.com/zostay/zedpm/pkg/storage"
 )
 
 // Config is the master configuration as we use it in the application. The

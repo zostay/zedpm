@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/zostay/zedpm/config"
-	"github.com/zostay/zedpm/storage"
+	"github.com/zostay/zedpm/pkg/storage"
 )
 
 type contextKey struct{}
