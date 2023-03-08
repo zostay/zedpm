@@ -5,18 +5,27 @@ import (
 	"time"
 )
 
+// ExportPrefix is the prefix required in order for a value to be visible within
+// KVExp.
 const ExportPrefix = "__export__."
 
+// Verify that KVExp is a KV.
 var _ KV = &KVExp{}
 
+// KVExp is a KV that only exposes a sub-set of values from the wrapped KV. In
+// order for a property to be visible to any of the accessors called on it,
+// there must exist a key named "__export__.<key>". Otherwise, this object will
+// act as if the value is not set.
 type KVExp struct {
 	KV
 }
 
+// ExportsOnly wraps the given KV in a KVExp.
 func ExportsOnly(values KV) *KVExp {
 	return &KVExp{values}
 }
 
+// AllKeys returns exported keys only.
 func (e *KVExp) AllKeys() []string {
 	keys := e.KV.AllKeys()
 	exportKeys := make([]string, 0, len(keys))
@@ -38,6 +47,7 @@ func (e *KVExp) AllKeys() []string {
 	return out
 }
 
+// AllSettings returns exported values only.
 func (e *KVExp) AllSettings() map[string]any {
 	out := New()
 	keys := e.AllKeys()
@@ -50,6 +60,7 @@ func (e *KVExp) AllSettings() map[string]any {
 	return out.AllSettings()
 }
 
+// AllSettingsStrings returns exported values only.
 func (e *KVExp) AllSettingsStrings() map[string]string {
 	keys := e.AllKeys()
 	out := make(map[string]string, len(keys))

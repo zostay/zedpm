@@ -5,13 +5,23 @@ import (
 	"time"
 )
 
+// Verify that KVChanges is a KV.
 var _ KV = &KVChanges{}
 
+// KVChanges is a key-value store that tracks changes atop the Inner KV. If a
+// value is changed, it will not change the Inner value. However, if that value
+// is retrieved, the changed value will be returned by this object.
 type KVChanges struct {
 	changes KV
-	Inner   KV
+
+	// Inner is the KV wrapped by this and will not be modified by KVChanges
+	// when Set or other write methods are called.
+	Inner KV
 }
 
+// WithChangeTracking adds change tracking to inner. The returned KVChanges
+// object will not modify the inner object when write methods are called upon
+// it, but will store the changes that are written.
 func WithChangeTracking(inner KV) *KVChanges {
 	return &KVChanges{
 		Inner:   inner,
@@ -19,6 +29,8 @@ func WithChangeTracking(inner KV) *KVChanges {
 	}
 }
 
+// AllKeys will return all keys that have been set either on the Inner KV or
+// added by making writes to this object.
 func (c *KVChanges) AllKeys() []string {
 	var (
 		innerKeys   = c.Inner.AllKeys()
@@ -36,6 +48,10 @@ func (c *KVChanges) AllKeys() []string {
 	return out
 }
 
+// AllSettings returns the complete map of values. This starts with the values
+// in the Inner KV and then layers on local changes so that any key lookup in
+// the returned map should have the same value there that it would have in the
+// KVChanges object.
 func (c *KVChanges) AllSettings() map[string]any {
 	var (
 		innerKeys   = c.Inner.AllKeys()
@@ -51,6 +67,8 @@ func (c *KVChanges) AllSettings() map[string]any {
 	return out
 }
 
+// AllSettingsStrings returns the complete map of values as a flat set a strings
+// with any local changes overriding those of the Inner KV.
 func (c *KVChanges) AllSettingsStrings() map[string]string {
 	keys := c.AllKeys()
 	out := make(map[string]string, len(keys))
@@ -60,6 +78,7 @@ func (c *KVChanges) AllSettingsStrings() map[string]string {
 	return out
 }
 
+// getc just make writing getters simpler.
 func getc[T any](c *KVChanges, key string, getter func(KV, string) T) T {
 	if c.changes.IsSet(key) {
 		return getter(c.changes, key)
@@ -146,36 +165,49 @@ func (c *KVChanges) Sub(key string) KV {
 	}
 }
 
+// IsSet returns true if the given key has been set in either the changes or the
+// Inner.
 func (c *KVChanges) IsSet(key string) bool {
 	return c.changes.IsSet(key) || c.Inner.IsSet(key)
 }
 
+// TODO Should Clear apply changes to make all the Inner disappear instead without modifying the Inner?
+
+// Clear will clear both the changes and the Inner.
 func (c *KVChanges) Clear() {
 	c.changes.Clear()
 	c.Inner.Clear()
 }
 
+// Set adds a setting to local changes and does not modify the Inner.
 func (c *KVChanges) Set(key string, value any) {
 	c.changes.Set(key, value)
 }
 
+// Update applies an update from the given map to local changes and odes not
+// modify the Inner.
 func (c *KVChanges) Update(values map[string]any) {
 	c.changes.Update(values)
 }
 
+// UpdateStrings applies an update from the given map to local changes and does
+// not modify the Inner.
 func (c *KVChanges) UpdateStrings(values map[string]string) {
 	c.changes.UpdateStrings(values)
 }
 
+// RegisterAlias registers an alias in the local changes and in the Inner.
 func (c *KVChanges) RegisterAlias(alias, key string) {
 	c.changes.RegisterAlias(alias, key)
 	c.Inner.RegisterAlias(alias, key)
 }
 
+// Changes returns all the local changes as a hierarchical map of values.
 func (c *KVChanges) Changes() map[string]any {
 	return c.changes.AllSettings()
 }
 
+// ChangesStrings returns all the local changes as a flat map of string values.
 func (c *KVChanges) ChangesStrings() map[string]string {
 	changesKeys := c.changes.AllKeys()
 	out := make(map[string]string, len(changesKeys))
@@ -185,6 +217,7 @@ func (c *KVChanges) ChangesStrings() map[string]string {
 	return out
 }
 
+// ClearChanges clears the local changes without modifying the Inner.
 func (c *KVChanges) ClearChanges() {
 	c.changes.Clear()
 }
