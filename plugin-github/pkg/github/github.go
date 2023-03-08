@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-github/v49/github"
 	"golang.org/x/oauth2"
 
+	"github.com/zostay/zedpm/pkg/git"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-git/pkg/git"
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 

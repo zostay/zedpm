@@ -8,8 +8,8 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 
+	zGit "github.com/zostay/zedpm/pkg/git"
 	"github.com/zostay/zedpm/plugin"
-	zGit "github.com/zostay/zedpm/plugin-git/pkg/git"
 )
 
 // ReleaseMintTask implements the /release/mint/git task.

@@ -7,8 +7,8 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 
+	zGit "github.com/zostay/zedpm/pkg/git"
 	"github.com/zostay/zedpm/plugin"
-	zGit "github.com/zostay/zedpm/plugin-git/pkg/git"
 )
 
 // ReleasePublishTask implements the /release/publish/git task.
