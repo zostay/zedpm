@@ -9,14 +9,16 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 
 	"github.com/zostay/zedpm/plugin"
-	zxGit "github.com/zostay/zedpm/plugin-git/pkg/git"
+	zGit "github.com/zostay/zedpm/plugin-git/pkg/git"
 )
 
+// ReleaseMintTask implements the /release/mint/git task.
 type ReleaseMintTask struct {
 	plugin.TaskBoilerplate
-	zxGit.Git
+	zGit.Git
 }
 
+// Setup initializes the git client and related objects.
 func (s *ReleaseMintTask) Setup(ctx context.Context) error {
 	return s.SetupGitRepo(ctx)
 }
@@ -26,7 +28,7 @@ func (s *ReleaseMintTask) Setup(ctx context.Context) error {
 // in the global .gitignore and not in the local .gitignore.
 func IsDirty(status git.Status) bool {
 	for fn, fstat := range status {
-		if _, ignorable := zxGit.IgnoreStatus[fn]; ignorable {
+		if _, ignorable := zGit.IgnoreStatus[fn]; ignorable {
 			continue
 		}
 
@@ -49,8 +51,8 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 		return fmt.Errorf("unable to find HEAD: %w", err)
 	}
 
-	if headRef.Name() != zxGit.TargetBranchRefName(ctx) {
-		return fmt.Errorf("you must checkout %s to release", zxGit.TargetBranch(ctx))
+	if headRef.Name() != zGit.TargetBranchRefName(ctx) {
+		return fmt.Errorf("you must checkout %s to release", zGit.TargetBranch(ctx))
 	}
 
 	remoteRefs, err := s.Remote().List(&git.ListOptions{})
@@ -60,7 +62,7 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 
 	var masterRef *plumbing.Reference
 	for _, ref := range remoteRefs {
-		if ref.Name() == zxGit.TargetBranchRefName(ctx) {
+		if ref.Name() == zGit.TargetBranchRefName(ctx) {
 			masterRef = ref
 			break
 		}
@@ -88,6 +90,7 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 	return nil
 }
 
+// Check calls CheckGitCleanliness.
 func (s *ReleaseMintTask) Check(ctx context.Context) error {
 	return s.CheckGitCleanliness(ctx)
 }
@@ -99,12 +102,12 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 		return fmt.Errorf("unable to retrieve the HEAD ref: %w", err)
 	}
 
-	branchRefName, err := zxGit.ReleaseBranchRefName(ctx)
+	branchRefName, err := zGit.ReleaseBranchRefName(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to determine release branch references: %w", err)
 	}
 
-	branch, _ := zxGit.ReleaseBranch(ctx)
+	branch, _ := zGit.GetPropertyGitReleaseBranch(ctx)
 	err = s.Worktree().Checkout(&git.CheckoutOptions{
 		Hash:   headRef.Hash(),
 		Branch: branchRefName,
@@ -119,7 +122,7 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 	})
 	plugin.ForCleanup(ctx, func() {
 		_ = s.Worktree().Checkout(&git.CheckoutOptions{
-			Branch: zxGit.TargetBranchRefName(ctx),
+			Branch: zGit.TargetBranchRefName(ctx),
 		})
 	})
 
@@ -133,15 +136,17 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 	return nil
 }
 
+// Begin sets up the SetDefaultReleaseBranch operation.
 func (s *ReleaseMintTask) Begin(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{
 			Order:  20,
-			Action: plugin.OperationFunc(zxGit.SetDefaultReleaseBranch),
+			Action: plugin.OperationFunc(zGit.SetDefaultReleaseBranch),
 		},
 	}, nil
 }
 
+// Run sets up the MakeReleaseBranch operation.
 func (s *ReleaseMintTask) Run(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{
@@ -177,7 +182,7 @@ func (s *ReleaseMintTask) AddAndCommit(ctx context.Context) error {
 
 // PushReleaseBranch pushes the release branch to github for release testing.
 func (s *ReleaseMintTask) PushReleaseBranch(ctx context.Context) error {
-	branchRefSpec, err := zxGit.ReleaseBranchRefSpec(ctx)
+	branchRefSpec, err := zGit.ReleaseBranchRefSpec(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to determine the ref spec: %w", err)
 	}
@@ -205,6 +210,7 @@ func (s *ReleaseMintTask) PushReleaseBranch(ctx context.Context) error {
 	return nil
 }
 
+// End sets up the AddAndCommit and PushReleaseBranch operations.
 func (s *ReleaseMintTask) End(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{

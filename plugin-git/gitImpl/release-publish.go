@@ -8,49 +8,42 @@ import (
 	"github.com/go-git/go-git/v5/config"
 
 	"github.com/zostay/zedpm/plugin"
-	git2 "github.com/zostay/zedpm/plugin-git/pkg/git"
+	zGit "github.com/zostay/zedpm/plugin-git/pkg/git"
 )
 
+// ReleasePublishTask implements the /release/publish/git task.
 type ReleasePublishTask struct {
 	plugin.TaskBoilerplate
-	git2.Git
+	zGit.Git
 }
 
+// Setup initializes the git client and related objects.
 func (f *ReleasePublishTask) Setup(ctx context.Context) error {
 	return f.SetupGitRepo(ctx)
-}
-
-func (f *ReleasePublishTask) Begin(context.Context) (plugin.Operations, error) {
-	return plugin.Operations{
-		{
-			Order:  20,
-			Action: plugin.OperationFunc(git2.SetDefaultReleaseTag),
-		},
-	}, nil
 }
 
 // TagRelease creates and pushes a tag for the newly merged release on master.
 func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 	err := f.Worktree().Checkout(&git.CheckoutOptions{
-		Branch: git2.TargetBranchRefName(ctx),
+		Branch: zGit.TargetBranchRefName(ctx),
 	})
 	if err != nil {
-		return fmt.Errorf("unable to switch to %s branch: %w", git2.TargetBranch(ctx), err)
+		return fmt.Errorf("unable to switch to %s branch: %w", zGit.TargetBranch(ctx), err)
 	}
 
 	headRef, err := f.Repository().Head()
 	if err != nil {
-		return fmt.Errorf("unable to get HEAD ref of %s branch: %w", git2.TargetBranch(ctx), err)
+		return fmt.Errorf("unable to get HEAD ref of %s branch: %w", zGit.TargetBranch(ctx), err)
 	}
 
-	tag, err := git2.ReleaseTag(ctx)
+	tag, err := zGit.GetPropertyGitReleaseTag(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to determine release tag: %w", err)
 	}
 
 	head := headRef.Hash()
 	_, err = f.Repository().CreateTag(tag, head, &git.CreateTagOptions{
-		Message: fmt.Sprintf("Release tag for v%s", git2.ReleaseVersion(ctx)),
+		Message: fmt.Sprintf("Release tag %q", tag),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to tag release %s: %w", tag, err)
@@ -58,7 +51,7 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 
 	plugin.ForCleanup(ctx, func() { _ = f.Repository().DeleteTag(tag) })
 
-	tagRefSpec, err := git2.ReleaseTagRefSpec(ctx)
+	tagRefSpec, err := zGit.ReleaseTagRefSpec(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to determine release tag ref spec: %w", err)
 	}
@@ -89,6 +82,7 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 	return nil
 }
 
+// End sets up the TagRelease operation to run.
 func (f *ReleasePublishTask) End(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{

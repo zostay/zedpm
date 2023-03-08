@@ -13,15 +13,17 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
-const (
-	defaultReleaseBranchPrefix = "release-v"
-	defaultReleaseTagPrefix    = "v"
-)
+// TODO IgnoreStatus should probably not be a thing. We can just use .gitignore.
 
+// IgnoreStatus defines some global files to always ignore when checking for
+// dirtiness.
 var IgnoreStatus = map[string]struct{}{
 	".session.vim": {},
 }
 
+// Git provides tools for working with a Git repository. It sets up client
+// objects to work with the local repository, the remote repository, and the
+// local work tree.
 type Git struct {
 	repo   *git.Repository
 	remote *git.Remote
@@ -37,10 +39,6 @@ func refSpec(r plumbing.ReferenceName) gitConfig.RefSpec {
 	return gitConfig.RefSpec(strings.Join([]string{sr, sr}, ":"))
 }
 
-func ReleaseVersion(ctx context.Context) string {
-	return plugin.GetString(ctx, "release.version")
-}
-
 func TargetBranch(ctx context.Context) string {
 	if plugin.IsSet(ctx, "target_branch") {
 		return plugin.GetString(ctx, "target_branch")
@@ -52,15 +50,8 @@ func TargetBranchRefName(ctx context.Context) plumbing.ReferenceName {
 	return ref("heads", TargetBranch(ctx))
 }
 
-func ReleaseBranch(ctx context.Context) (string, error) {
-	if plugin.IsSet(ctx, "release.branch") {
-		return plugin.GetString(ctx, "release.branch"), nil
-	}
-	return "", fmt.Errorf("missing required \"release.branch\" setting")
-}
-
 func ReleaseBranchRefName(ctx context.Context) (plumbing.ReferenceName, error) {
-	branch, err := ReleaseBranch(ctx)
+	branch, err := GetPropertyGitReleaseBranch(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -75,36 +66,13 @@ func ReleaseBranchRefSpec(ctx context.Context) (gitConfig.RefSpec, error) {
 	return refSpec(branchRefName), nil
 }
 
-func ReleaseTag(ctx context.Context) (string, error) {
-	if plugin.IsSet(ctx, "release.tag") {
-		return plugin.GetString(ctx, "release.tag"), nil
-	}
-	return "", fmt.Errorf("missing required \"release.tag\" setting")
-}
-
 func ReleaseTagRefSpec(ctx context.Context) (gitConfig.RefSpec, error) {
-	tag, err := ReleaseTag(ctx)
+	tag, err := GetPropertyGitReleaseTag(ctx)
 	if err != nil {
 		return "", err
 	}
 	tagRefName := ref("tags", tag)
 	return refSpec(tagRefName), nil
-}
-
-func SetDefaultReleaseBranch(ctx context.Context) error {
-	if !plugin.IsSet(ctx, "release.branch") && ReleaseVersion(ctx) != "" {
-		branchName := defaultReleaseBranchPrefix + ReleaseVersion(ctx)
-		plugin.Set(ctx, "release.branch", branchName)
-	}
-	return nil
-}
-
-func SetDefaultReleaseTag(ctx context.Context) error {
-	if !plugin.IsSet(ctx, "release.tag") && ReleaseVersion(ctx) != "" {
-		tagName := defaultReleaseTagPrefix + ReleaseVersion(ctx)
-		plugin.Set(ctx, "release.tag", tagName)
-	}
-	return nil
 }
 
 func (g *Git) SetupGitRepo(ctx context.Context) error {
