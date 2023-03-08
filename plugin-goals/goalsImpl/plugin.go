@@ -9,14 +9,13 @@ import (
 	"github.com/zostay/zedpm/storage"
 )
 
+// Verify that Plugin is an implementation of plugin.Interface.
 var _ plugin.Interface = &Plugin{}
 
+// Plugin implements the built-in goals plugin.
 type Plugin struct{}
 
-type InfoDisplayTask struct {
-	plugin.TaskBoilerplate
-}
-
+// Implements returns that this plugin implements the /info/display task.
 func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
 	info := goals.DescribeInfo()
 	return []plugin.TaskDescription{
@@ -24,6 +23,8 @@ func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
 	}, nil
 }
 
+// Goal provides descriptions for the following goals: build, deploy, generate,
+// info, init, install, lint, release, request, and test.
 func (p *Plugin) Goal(
 	_ context.Context,
 	name string,
@@ -54,6 +55,7 @@ func (p *Plugin) Goal(
 	}
 }
 
+// Prepare returns the implementations for the implemented tasks.
 func (p *Plugin) Prepare(
 	_ context.Context,
 	taskName string,
@@ -65,16 +67,19 @@ func (p *Plugin) Prepare(
 	return nil, plugin.ErrUnsupportedTask
 }
 
+// Cancel is a no-op.
 func (p *Plugin) Cancel(context.Context, plugin.Task) error {
 	return nil
 }
 
+// Complete will output the accumulated properties if the /info/display task has
+// been executed.
 func (p *Plugin) Complete(ctx context.Context, task plugin.Task) error {
-	values := plugin.KV(ctx)
-	outputAll := InfoOutputAll(ctx)
+	var values storage.KV = plugin.KV(ctx)
+	outputAll := goals.GetPropertyInfoOutputAll(ctx)
 	if !outputAll {
 		values = storage.ExportsOnly(values)
 	}
-	formatter := InfoOutputFormatter(ctx)
+	formatter := goals.InfoOutputFormatter(ctx)
 	return formatter(os.Stdout, values)
 }
