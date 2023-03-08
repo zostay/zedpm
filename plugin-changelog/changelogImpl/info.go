@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/zostay/zedpm/changes"
+	"github.com/zostay/zedpm/pkg/changes"
 	"github.com/zostay/zedpm/plugin"
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
