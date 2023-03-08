@@ -3,8 +3,8 @@ package githubImpl
 import (
 	"context"
 
+	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
 // Verifies that Plugin implements plugin.Interface.

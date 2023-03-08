@@ -10,8 +10,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/zostay/zedpm/pkg/git"
+	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
 // Github provides a client object for accessing the Github API.

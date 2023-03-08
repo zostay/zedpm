@@ -1,8 +1,8 @@
 package translate
 
 import (
+	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 	"github.com/zostay/zedpm/plugin/api"
 )
 

@@ -7,8 +7,8 @@ import (
 	"github.com/google/go-github/v49/github"
 
 	zGithub "github.com/zostay/zedpm/pkg/github"
+	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
 // ReleaseMintTask implements the /release/mint/github task.

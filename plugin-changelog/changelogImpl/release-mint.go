@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
 // ReleaseMintTask is the implementation of the /release/mint/changelog task.
