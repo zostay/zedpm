@@ -136,16 +136,6 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 	return nil
 }
 
-// Begin sets up the SetDefaultReleaseBranch operation.
-func (s *ReleaseMintTask) Begin(context.Context) (plugin.Operations, error) {
-	return plugin.Operations{
-		{
-			Order:  20,
-			Action: plugin.OperationFunc(zGit.SetDefaultReleaseBranch),
-		},
-	}, nil
-}
-
 // Run sets up the MakeReleaseBranch operation.
 func (s *ReleaseMintTask) Run(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{

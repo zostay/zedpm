@@ -14,13 +14,10 @@ import (
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
+// Github provides a client object for accessing the Github API.
 type Github struct {
 	git.Git
 	gh *github.Client
-}
-
-func ReleaseVersion(ctx context.Context) string {
-	return plugin.GetString(ctx, "release.version")
 }
 
 func (g *Github) Client() *github.Client {
