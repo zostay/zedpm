@@ -5,10 +5,23 @@ import (
 	"time"
 )
 
+// KVLayer is a KV built from other KV implementations. When setting a value,
+// only the first KV in the Layers list is ever modified. When getting a value,
+// the first layer is checked to see if it has that setting. If it does, that's
+// the value returned. If not, the next layer is checked. This continues until
+// the last layer is reached. If no layer has that setting set, the zero value
+// is returned.
 type KVLayer struct {
+	// Layers are the layers that make up the KV. Index 0 of Layers is the only
+	// KV that can be modified by KVLayer. When performing read operations,
+	// index 0 is checked for a value first, then 1, then 2, and so on until the
+	// last layer is read.
+	//
+	// There must be at least one layer here if you like to avoid panics.
 	Layers []KV
 }
 
+// Layers creates a KVLayer from the layers.
 func Layers(layers ...KV) *KVLayer {
 	if len(layers) == 0 {
 		panic("there must be at least one layer in layered storage")
@@ -23,6 +36,7 @@ func Layers(layers ...KV) *KVLayer {
 	return &KVLayer{nonNilLayers}
 }
 
+// AllKeys combines all the keys from all the layers.
 func (l *KVLayer) AllKeys() []string {
 	set := make(map[string]struct{}, len(l.Layers[0].AllKeys()))
 	for _, layer := range l.Layers {
@@ -35,6 +49,7 @@ func (l *KVLayer) AllKeys() []string {
 	return out
 }
 
+// AllSettings merges all the settings from all the layers.
 func (l *KVLayer) AllSettings() map[string]any {
 	out := make(map[string]any, len(l.Layers[0].AllKeys()))
 	for _, l := range l.Layers {
@@ -45,6 +60,7 @@ func (l *KVLayer) AllSettings() map[string]any {
 	return out
 }
 
+// AllSettingsStrings merges all the settings from all the layers.
 func (l *KVLayer) AllSettingsStrings() map[string]string {
 	keys := l.AllKeys()
 	out := make(map[string]string, len(keys))
@@ -143,6 +159,7 @@ func (l *KVLayer) Sub(key string) KV {
 	return Layers(newLayers...)
 }
 
+// IsSet returns true if the key is set in any layer.
 func (l *KVLayer) IsSet(key string) bool {
 	for _, layer := range l.Layers {
 		if layer.IsSet(key) {
@@ -152,24 +169,29 @@ func (l *KVLayer) IsSet(key string) bool {
 	return false
 }
 
+// Clear clears all layers.
 func (l *KVLayer) Clear() {
 	for _, layer := range l.Layers {
 		layer.Clear()
 	}
 }
 
+// Set sets the key in the first layer.
 func (l *KVLayer) Set(key string, value any) {
 	l.Layers[0].Set(key, value)
 }
 
+// Update sets values in the first layer.
 func (l *KVLayer) Update(values map[string]any) {
 	l.Layers[0].Update(values)
 }
 
+// UpdateStrings sets values in the first layer.
 func (l *KVLayer) UpdateStrings(values map[string]string) {
 	l.Layers[0].UpdateStrings(values)
 }
 
+// RegisterAlias registers the alias in all layers.
 func (l *KVLayer) RegisterAlias(alias, key string) {
 	for _, layer := range l.Layers {
 		layer.RegisterAlias(alias, key)
