@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-github/v49/github"
 
+	zGithub "github.com/zostay/zedpm/pkg/github"
 	"github.com/zostay/zedpm/plugin"
-	zGithub "github.com/zostay/zedpm/plugin-github/pkg/github"
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
