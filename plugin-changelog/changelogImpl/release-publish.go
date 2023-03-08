@@ -10,19 +10,19 @@ import (
 	"github.com/zostay/zedpm/plugin-goals/pkg/goals"
 )
 
+// ReleasePublishTask implements the /release/publish/changelog task.
 type ReleasePublishTask struct {
 	plugin.TaskBoilerplate
-
-	Changelog string
 }
 
 // CaptureChangesInfo loads the bullets for the changelog section relevant to
 // this release into the process configuration for use when creating the release
 // later.
 func (f *ReleasePublishTask) CaptureChangesInfo(ctx context.Context) error {
-	version := plugin.GetString(ctx, "release.version")
+	version := goals.GetPropertyReleaseVersion(ctx)
 	vstring := "v" + version
-	cr, err := changes.ExtractSection(f.Changelog, vstring)
+	changelog := GetPropertyChangelogFile(ctx)
+	cr, err := changes.ExtractSection(changelog, vstring)
 	if err != nil {
 		return fmt.Errorf("unable to get log of changes: %w", err)
 	}
@@ -41,10 +41,8 @@ func (f *ReleasePublishTask) CaptureChangesInfo(ctx context.Context) error {
 	return nil
 }
 
+// Check executes CaptureChangesInfo to get the latest changes and save them for
+// release.description for use by other plugins to finish the release process.
 func (f *ReleasePublishTask) Check(ctx context.Context) error {
-	if f.Changelog == "" {
-		return fmt.Errorf("missing changelog location in paths config")
-	}
-
 	return f.CaptureChangesInfo(ctx)
 }
