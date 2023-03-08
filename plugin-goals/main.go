@@ -1,3 +1,4 @@
+// Package main is the command that runs the zedpm-plugin-goals plugin.
 package main
 
 import (

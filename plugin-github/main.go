@@ -1,3 +1,4 @@
+// Package main is the command that runs the zedpm-plugin-github plugin.
 package main
 
 import (

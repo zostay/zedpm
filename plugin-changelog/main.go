@@ -1,3 +1,4 @@
+// Package main runs the zedpm-plugin-changelog plugin.
 package main
 
 import (
