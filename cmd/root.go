@@ -35,10 +35,9 @@ func Execute() {
 	stdErr := metal.NewSyncBuffer(os.Stderr)
 
 	logger := hclog.New(&hclog.LoggerOptions{
-		Name:       "zedpm",
-		Level:      hclog.Warn,
-		Output:     stdErr,
-		JSONFormat: true,
+		Name:   "zedpm",
+		Level:  hclog.Warn,
+		Output: stdErr,
 	})
 
 	plugins, err := metal.LoadPlugins(logger, cfg, stdOut, stdErr)
