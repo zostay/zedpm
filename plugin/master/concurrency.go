@@ -3,6 +3,8 @@ package master
 import (
 	"context"
 	"sync"
+
+	"github.com/zostay/zedpm/pkg/errors"
 )
 
 // RunTasksAndAccumulate runs the task function for each input returned by the
@@ -15,7 +17,7 @@ func RunTasksAndAccumulate[Idx comparable, In, Out any](
 	task func(context.Context, Idx, In) (Out, error),
 ) ([]Out, error) {
 	results := make([]Out, 0, inputs.Len())
-	accErr := make(Error, 0, inputs.Len())
+	accErr := make(errors.SliceError, 0, inputs.Len())
 
 	resChan := make(chan Out)
 	errChan := make(chan error)

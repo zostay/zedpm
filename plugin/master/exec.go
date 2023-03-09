@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -20,21 +19,6 @@ import (
 // to how we move through the process of task execution generally.
 
 // TODO Take advantage of Golang 1.20's Unwrap() functionality in Error.
-
-// Error is returned by many of the processes here. It represents a list of
-// errors. Since concurrency is involved with running multiple tasks at once, it
-// is quite possible that multiple failures may occur simultaneously. This error
-// implementation collects these errors into a super-error.
-type Error []error
-
-// Error returns all the errors inside it as a string.
-func (e Error) Error() string {
-	msgs := make([]string, len(e))
-	for i, err := range e {
-		msgs[i] = err.Error()
-	}
-	return strings.Join(msgs, "; ")
-}
 
 // InterfaceExecutor is a tool for executing plugin.Interface objects. It must
 // be paired with the master.Interface to help perform this task.
@@ -74,10 +58,11 @@ func (e *InterfaceExecutor) tryCancel(
 ) {
 	cancelErr := e.m.Cancel(withFinalTaskName(ctx, taskName), task)
 	if cancelErr != nil {
+		errMsg := format.Err(cancelErr)
 		e.logger.Error("failed while canceling task due to error",
 			"stage", stage,
 			"task", taskName,
-			"error", cancelErr)
+			"error", errMsg)
 	}
 }
 
@@ -88,7 +73,10 @@ func (e *InterfaceExecutor) logFail(
 	stage string,
 	err error,
 ) {
-	e.logger.Error("task failed", "stage", stage, "task", taskName, "error", err)
+	e.logger.Error("task failed",
+		"stage", stage,
+		"task", taskName,
+		"error", format.Err(err))
 }
 
 // prepare is used to run plugin.Interface.Prepare and handle errors as
@@ -246,7 +234,7 @@ func (e *InterfaceExecutor) complete(
 		e.logger.Error("failed while completing task due to error",
 			"stage", "Complete",
 			"task", taskName,
-			"error", err)
+			"error", format.Err(err))
 	}
 	return err
 }
