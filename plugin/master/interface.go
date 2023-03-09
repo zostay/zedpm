@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
@@ -18,6 +20,7 @@ var _ plugin.Interface = &Interface{}
 // use of InterfaceExecutor to provide a full set of tools for concurrently
 // executing a goal or task.
 type Interface struct {
+	logger     hclog.Logger                // the logger the master interface uses
 	cfg        *config.Config              // the configuration to use during execution
 	is         map[string]plugin.Interface // the plugins to execute
 	targetName string                      // the target to use when choosing configuration
@@ -27,10 +30,11 @@ type Interface struct {
 // NewInterface creates a new Interface object for the given configuration and
 // plugins.
 func NewInterface(
+	logger hclog.Logger,
 	cfg *config.Config,
 	is map[string]plugin.Interface,
 ) *Interface {
-	return &Interface{cfg, is, "", storage.New()}
+	return &Interface{logger, cfg, is, "", storage.New()}
 }
 
 // GetInterface retrieves the plugin.Interface for the named plugin.
@@ -61,7 +65,7 @@ func (ti *Interface) ctxFor(
 	taskName string,
 	pluginName string,
 ) (context.Context, *plugin.Context) {
-	pctx := plugin.NewConfigContext(ti.properties, taskName, ti.targetName, pluginName, ti.cfg)
+	pctx := plugin.NewConfigContext(ti.logger, ti.properties, taskName, ti.targetName, pluginName, ti.cfg)
 	return plugin.InitializeContext(ctx, pctx), pctx
 }
 

@@ -43,12 +43,13 @@ func (e Error) Error() string {
 // these two objects. This object is focused on executing all the operations of
 // a task in the correct order and then resolve any errors that occur correctly.
 type InterfaceExecutor struct {
-	m *Interface
+	m      *Interface
+	logger hclog.Logger
 }
 
 // NewExecutor creates a new InterfaceExecutor paired with the given Interface.
-func NewExecutor(m *Interface) *InterfaceExecutor {
-	return &InterfaceExecutor{m}
+func NewExecutor(logger hclog.Logger, m *Interface) *InterfaceExecutor {
+	return &InterfaceExecutor{m, logger}
 }
 
 // SetTargetName is used to update the target name to use when configuring the
@@ -71,10 +72,9 @@ func (e *InterfaceExecutor) tryCancel(
 	task plugin.Task,
 	stage string,
 ) {
-	logger := hclog.FromContext(ctx)
 	cancelErr := e.m.Cancel(withFinalTaskName(ctx, taskName), task)
 	if cancelErr != nil {
-		logger.Error("failed while canceling task due to error",
+		e.logger.Error("failed while canceling task due to error",
 			"stage", stage,
 			"task", taskName,
 			"error", cancelErr)
@@ -88,8 +88,7 @@ func (e *InterfaceExecutor) logFail(
 	stage string,
 	err error,
 ) {
-	logger := hclog.FromContext(ctx)
-	logger.Error("task failed", "stage", stage, "task", taskName, "error", err)
+	e.logger.Error("task failed", "stage", stage, "task", taskName, "error", err)
 }
 
 // prepare is used to run plugin.Interface.Prepare and handle errors as
@@ -244,8 +243,7 @@ func (e *InterfaceExecutor) complete(
 ) error {
 	err := e.m.Complete(withFinalTaskName(ctx, taskName), task)
 	if err != nil {
-		logger := hclog.FromContext(ctx)
-		logger.Error("failed while completing task due to error",
+		e.logger.Error("failed while completing task due to error",
 			"stage", "Complete",
 			"task", taskName,
 			"error", err)

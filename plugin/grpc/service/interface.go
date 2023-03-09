@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/oklog/ulid/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -30,13 +31,17 @@ type TaskState struct {
 type TaskExecution struct {
 	api.UnimplementedTaskExecutionServer
 
-	Impl  plugin.Interface
-	state map[string]map[string]*TaskState
+	Impl   plugin.Interface
+	logger hclog.Logger
+	state  map[string]map[string]*TaskState
 }
 
 // NewGRPCTaskExecution returns a new TaskExecution object that will map
 // incoming gRPC service calls to a plugin.Interface implementation.
-func NewGRPCTaskExecution(impl plugin.Interface) *TaskExecution {
+func NewGRPCTaskExecution(
+	logger hclog.Logger,
+	impl plugin.Interface,
+) *TaskExecution {
 	taskDescs, err := impl.Implements(context.Background())
 	if err != nil {
 		return nil
@@ -48,8 +53,9 @@ func NewGRPCTaskExecution(impl plugin.Interface) *TaskExecution {
 	}
 
 	return &TaskExecution{
-		Impl:  impl,
-		state: state,
+		Impl:   impl,
+		logger: logger,
+		state:  state,
 	}
 }
 
@@ -80,7 +86,7 @@ func (s *TaskExecution) Goal(
 	ctx context.Context,
 	request *api.Task_Goal_Request,
 ) (*api.Task_Goal_Response, error) {
-	pctx := plugin.NewContext(storage.New())
+	pctx := plugin.NewContext(s.logger, storage.New())
 	ctx = plugin.InitializeContext(ctx, pctx)
 
 	goalDesc, err := s.Impl.Goal(ctx, request.GetName())
@@ -102,7 +108,7 @@ func (s *TaskExecution) Prepare(
 	globalConfig := request.GetGlobalConfig()
 
 	kv := translate.APIConfigToKV(globalConfig)
-	pctx := plugin.NewContext(kv)
+	pctx := plugin.NewContext(s.logger, kv)
 	ctx = plugin.InitializeContext(ctx, pctx)
 
 	task, err := s.Impl.Prepare(ctx, request.GetName())

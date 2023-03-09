@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	"github.com/zostay/zedpm/config"
@@ -16,6 +17,7 @@ import (
 // it contacts each plugin to see what it implements and uses that information
 // to configure the available run subcommands on the command-line.
 func configureTasks(
+	logger hclog.Logger,
 	cfg *config.Config,
 	plugins metal.Clients,
 	attachCmd *cobra.Command,
@@ -25,8 +27,8 @@ func configureTasks(
 		return err
 	}
 
-	m := master.NewInterface(cfg, ifaces)
-	e := master.NewExecutor(m)
+	m := master.NewInterface(logger, cfg, ifaces)
+	e := master.NewExecutor(logger, m)
 
 	ctx := context.Background()
 	groups, err := e.TaskGroups(ctx)

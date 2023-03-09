@@ -48,7 +48,7 @@ func LoadLocalPlugin(
 			},
 			HandshakeConfig: Handshake,
 			Plugins: goPlugin.PluginSet{
-				"task-interface": NewPlugin(iface),
+				"task-interface": NewPlugin(logger, iface),
 			},
 			GRPCServer: goPlugin.DefaultGRPCServer,
 		})
@@ -116,6 +116,7 @@ func NewGoPluginClient(
 // LoadPlugins will load all the configured plugins by executing their plugin
 // program via the Hashicorp plugin interface for each.
 func LoadPlugins(
+	logger hclog.Logger,
 	cfg *config.Config,
 	stdOut *SyncBuffer,
 	stdErr *SyncBuffer,
@@ -123,13 +124,6 @@ func LoadPlugins(
 	clients := make(Clients, len(cfg.Plugins))
 	for i := range cfg.Plugins {
 		pcfg := &cfg.Plugins[i]
-
-		logger := hclog.New(&hclog.LoggerOptions{
-			Output:     stdErr,
-			Level:      hclog.Warn,
-			Name:       "plugin-" + pcfg.Name,
-			JSONFormat: true,
-		})
 
 		var client *goPlugin.Client
 		if plugin, wantsLocal := runPluginServerLocally[pcfg.Name]; wantsLocal {

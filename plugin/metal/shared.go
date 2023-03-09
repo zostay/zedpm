@@ -3,6 +3,7 @@ package metal
 import (
 	"context"
 
+	"github.com/hashicorp/go-hclog"
 	goPlugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
@@ -23,12 +24,13 @@ var Handshake = goPlugin.HandshakeConfig{
 // the Hashicorp plugin interface.
 type InterfaceGRPCPlugin struct {
 	goPlugin.Plugin
-	Impl plugin.Interface
+	Impl   plugin.Interface
+	logger hclog.Logger
 }
 
 // NewPlugin creates a new plugin object for the given plugin interface.
-func NewPlugin(impl plugin.Interface) *InterfaceGRPCPlugin {
-	return &InterfaceGRPCPlugin{Impl: impl}
+func NewPlugin(logger hclog.Logger, impl plugin.Interface) *InterfaceGRPCPlugin {
+	return &InterfaceGRPCPlugin{Impl: impl, logger: logger}
 }
 
 // GRPCServer returns a new GRPC plugin server for implementing a plugin.
@@ -36,7 +38,7 @@ func (p *InterfaceGRPCPlugin) GRPCServer(
 	_ *goPlugin.GRPCBroker,
 	s *grpc.Server,
 ) error {
-	api.RegisterTaskExecutionServer(s, service.NewGRPCTaskExecution(p.Impl))
+	api.RegisterTaskExecutionServer(s, service.NewGRPCTaskExecution(p.logger, p.Impl))
 	return nil
 }
 

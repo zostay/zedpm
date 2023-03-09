@@ -22,6 +22,7 @@ type contextKey struct{}
 // AtomicProperties function is provided to allow for atomic operations to be
 // safely performed without races.
 type Context struct {
+	// TODO The hclog.Logger is rubbish. Switch to zap.Logger.
 	logger     hclog.Logger
 	cleanup    []SimpleTask
 	addFiles   []string
@@ -42,11 +43,12 @@ type SimpleTask func()
 // caller can apply these changes by using UpdateStorage and StorageChanges
 // together.
 func NewContext(
+	logger hclog.Logger,
 	properties storage.KV,
 ) *Context {
 	props := storage.WithChangeTracking(properties)
 	return &Context{
-		logger:     hclog.L(),
+		logger:     logger,
 		cleanup:    make([]SimpleTask, 0, 10),
 		addFiles:   make([]string, 0, 10),
 		properties: props,
@@ -62,13 +64,14 @@ func NewContext(
 // This has the same limitations as NewContext regarding the properties that is
 // mentioned in NewContext.
 func NewConfigContext(
+	logger hclog.Logger,
 	runtime storage.KV,
 	taskName string,
 	targetName string,
 	pluginName string,
 	cfg *config.Config,
 ) *Context {
-	return NewContext(cfg.ToKV(runtime, taskName, targetName, pluginName))
+	return NewContext(logger, cfg.ToKV(runtime, taskName, targetName, pluginName))
 }
 
 // UpdateStorage allows the owner of the Context to update the properties of the

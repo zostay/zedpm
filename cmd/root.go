@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
 	config2 "github.com/zostay/zedpm/config"
@@ -33,13 +34,20 @@ func Execute() {
 	stdOut := metal.NewSyncBuffer(os.Stdout)
 	stdErr := metal.NewSyncBuffer(os.Stderr)
 
-	plugins, err := metal.LoadPlugins(cfg, stdOut, stdErr)
+	logger := hclog.New(&hclog.LoggerOptions{
+		Name:       "zedpm",
+		Level:      hclog.Warn,
+		Output:     stdErr,
+		JSONFormat: true,
+	})
+
+	plugins, err := metal.LoadPlugins(logger, cfg, stdOut, stdErr)
 	if err != nil {
 		panic(err) // TODO Fix this panic, it's temporary
 	}
 	defer metal.KillPlugins(plugins)
 
-	err = configureTasks(cfg, plugins, runCmd)
+	err = configureTasks(logger, cfg, plugins, runCmd)
 	if err != nil {
 		panic(fmt.Sprintf("zedpm failed to configure goals: %v\n", err))
 	}
