@@ -9,6 +9,7 @@ import (
 	goPlugin "github.com/hashicorp/go-plugin"
 
 	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
 	"github.com/zostay/zedpm/plugin-changelog/changelogImpl"
 )
@@ -153,12 +154,12 @@ func LoadPlugins(
 func Dispense(clients Clients, name string) (plugin.Interface, error) {
 	client, err := clients[name].Client()
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to plugin %q: %w", name, err)
+		return nil, format.WrapErr(err, "error connecting to plugin %q", name)
 	}
 
 	raw, err := client.Dispense("task-interface")
 	if err != nil {
-		return nil, fmt.Errorf("error dispensing plugin %q: %w", name, err)
+		return nil, format.WrapErr(err, "error dispensing plugin %q", name)
 	}
 
 	iface := raw.(plugin.Interface)

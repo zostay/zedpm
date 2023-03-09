@@ -8,6 +8,7 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 
+	"github.com/zostay/zedpm/format"
 	zGit "github.com/zostay/zedpm/pkg/git"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -48,7 +49,7 @@ func IsDirty(status git.Status) bool {
 func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 	headRef, err := s.Repository().Head()
 	if err != nil {
-		return fmt.Errorf("unable to find HEAD: %w", err)
+		return format.WrapErr(err, "unable to find HEAD")
 	}
 
 	if headRef.Name() != zGit.TargetBranchRefName(ctx) {
@@ -57,7 +58,7 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 
 	remoteRefs, err := s.Remote().List(&git.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("unable to list remote git references: %w", err)
+		return format.WrapErr(err, "unable to list remote git references")
 	}
 
 	var masterRef *plumbing.Reference
@@ -74,7 +75,7 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 
 	stat, err := s.Worktree().Status()
 	if err != nil {
-		return fmt.Errorf("unable to check working copy status: %w", err)
+		return format.WrapErr(err, "unable to check working copy status")
 	}
 
 	if IsDirty(stat) {
@@ -99,12 +100,12 @@ func (s *ReleaseMintTask) Check(ctx context.Context) error {
 func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 	headRef, err := s.Repository().Head()
 	if err != nil {
-		return fmt.Errorf("unable to retrieve the HEAD ref: %w", err)
+		return format.WrapErr(err, "unable to retrieve the HEAD ref")
 	}
 
 	branchRefName, err := zGit.ReleaseBranchRefName(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to determine release branch references: %w", err)
+		return format.WrapErr(err, "unable to determine release branch references")
 	}
 
 	branch, _ := zGit.GetPropertyGitReleaseBranch(ctx)
@@ -114,7 +115,7 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 		Create: true,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to checkout branch %s: %v", branch, err)
+		return format.WrapErr(err, "unable to checkout branch %s: %v", branch)
 	}
 
 	plugin.ForCleanup(ctx, func() {
@@ -153,14 +154,14 @@ func (s *ReleaseMintTask) AddAndCommit(ctx context.Context) error {
 	for _, fn := range addedFiles {
 		_, err := s.Worktree().Add(fn)
 		if err != nil {
-			return fmt.Errorf("error adding file %s to git: %w", fn, err)
+			return format.WrapErr(err, "error adding file %s to git", fn)
 		}
 	}
 
 	version := plugin.GetString(ctx, "release.version")
 	_, err := s.Worktree().Commit("releng: v"+version, &git.CommitOptions{})
 	if err != nil {
-		return fmt.Errorf("error committing changes to git: %w", err)
+		return format.WrapErr(err, "error committing changes to git")
 	}
 
 	plugin.Logger(ctx,
@@ -174,7 +175,7 @@ func (s *ReleaseMintTask) AddAndCommit(ctx context.Context) error {
 func (s *ReleaseMintTask) PushReleaseBranch(ctx context.Context) error {
 	branchRefSpec, err := zGit.ReleaseBranchRefSpec(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to determine the ref spec: %w", err)
+		return format.WrapErr(err, "unable to determine the ref spec")
 	}
 
 	err = s.Repository().Push(&git.PushOptions{
@@ -182,7 +183,7 @@ func (s *ReleaseMintTask) PushReleaseBranch(ctx context.Context) error {
 		RefSpecs:   []config.RefSpec{branchRefSpec},
 	})
 	if err != nil {
-		return fmt.Errorf("error pushing changes to github: %w", err)
+		return format.WrapErr(err, "error pushing changes to github")
 	}
 
 	plugin.ForCleanup(ctx, func() {

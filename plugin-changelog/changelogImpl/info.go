@@ -2,9 +2,9 @@ package changelogImpl
 
 import (
 	"context"
-	"fmt"
 	"io"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/changes"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
@@ -23,12 +23,12 @@ func (t *InfoChangelogTask) ExtractChangelog(ctx context.Context) error {
 	version := goals.GetPropertyInfoVersion(ctx)
 	r, err := changes.ExtractSection(GetPropertyChangelogFile(ctx), version)
 	if err != nil {
-		return fmt.Errorf("failed to read changelog section: %w", err)
+		return format.WrapErr(err, "failed to read changelog section")
 	}
 
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return fmt.Errorf("failed to read changelog data: %w", err)
+		return format.WrapErr(err, "failed to read changelog data")
 	}
 
 	goals.SetPropertyReleaseDescription(ctx, string(data))

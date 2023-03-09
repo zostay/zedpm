@@ -3,11 +3,11 @@ package master
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -160,7 +160,7 @@ func (ti *Interface) Prepare(
 			ctx, _ = ti.ctxFor(ctx, taskName, pluginName)
 			mayPrepare, err := ti.implements(ctx, iface, taskName)
 			if err != nil {
-				return nil, fmt.Errorf("plugin %q failed implements check for task %q: %w", pluginName, taskName, err)
+				return nil, format.WrapErr(err, "plugin %q failed implements check for task %q", pluginName, taskName)
 			}
 
 			if mayPrepare {
@@ -169,7 +169,7 @@ func (ti *Interface) Prepare(
 					if t != nil {
 						return newTaskInfo(pluginName, iface, t), err
 					}
-					return nil, fmt.Errorf("plugin %q failed to run task %q: %w", pluginName, taskName, err)
+					return nil, format.WrapErr(err, "plugin %q failed to run task %q", pluginName, taskName)
 				}
 				return newTaskInfo(pluginName, iface, t), nil
 			}

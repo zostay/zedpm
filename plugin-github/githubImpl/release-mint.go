@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-github/v49/github"
 
+	"github.com/zostay/zedpm/format"
 	zGithub "github.com/zostay/zedpm/pkg/github"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
@@ -23,17 +24,17 @@ type ReleaseMintTask struct {
 func (s *ReleaseMintTask) CreateGithubPullRequest(ctx context.Context) error {
 	owner, project, err := s.OwnerProject(ctx)
 	if err != nil {
-		return fmt.Errorf("failed getting owner/project information: %w", err)
+		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
 	branch, err := zGithub.ReleaseBranch(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get release branch name: %w", err)
+		return format.WrapErr(err, "failed to get release branch name")
 	}
 
 	prName, err := zGithub.GetPropertyGithubReleaseName(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get release name: %w", err)
+		return format.WrapErr(err, "failed to get release name")
 	}
 
 	body := fmt.Sprintf("Pull request to complete %q of project.", prName)
@@ -49,7 +50,7 @@ func (s *ReleaseMintTask) CreateGithubPullRequest(ctx context.Context) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("unable to create pull request: %w", err)
+		return format.WrapErr(err, "unable to create pull request")
 	}
 
 	plugin.Logger(ctx,

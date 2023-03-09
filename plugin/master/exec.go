@@ -265,7 +265,7 @@ func (e *InterfaceExecutor) ExecuteAllStages(
 ) error {
 	stages, err := group.ExecutionGroups()
 	if err != nil {
-		return fmt.Errorf("failed to break down goal %q into stages: %v", group.Goal.Name(), err)
+		return format.WrapErr(err, "failed to break down goal %q into stages", group.Goal.Name())
 	}
 
 	for _, stage := range stages {
@@ -275,7 +275,7 @@ func (e *InterfaceExecutor) ExecuteAllStages(
 			for i, task := range stage {
 				stageNames[i] = task.Name()
 			}
-			return fmt.Errorf("failed to execute stage (%s): %v", format.And(stageNames...), err)
+			return format.WrapErr(err, "failed to execute stage (%s)", format.And(stageNames...))
 		}
 	}
 
@@ -303,7 +303,7 @@ func (e *InterfaceExecutor) Execute(
 ) error {
 	task, err := e.prepare(ctx, taskName)
 	if err != nil {
-		return fmt.Errorf("failed to prepare task %q: %v", taskName, err)
+		return format.WrapErr(err, "failed to prepare task %q", taskName)
 	}
 
 	stdOps := []struct {
@@ -323,7 +323,7 @@ func (e *InterfaceExecutor) Execute(
 	for _, stdOp := range stdOps {
 		err = stdOp.function(ctx, taskName, task)
 		if err != nil {
-			return fmt.Errorf("failed to execute operation %s: %v", stdOp.name, err)
+			return format.WrapErr(err, "failed to execute operation %s", stdOp.name)
 		}
 	}
 

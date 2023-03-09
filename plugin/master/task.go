@@ -2,9 +2,9 @@ package master
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -114,7 +114,7 @@ func executeBasicStage(
 	return func(ctx context.Context, t plugin.Task) error {
 		err := opFunc(t, ctx)
 		if err != nil {
-			return fmt.Errorf("failed %s stage: %w", stage, err)
+			return format.WrapErr(err, "failed %s stage", stage)
 		}
 		return nil
 	}

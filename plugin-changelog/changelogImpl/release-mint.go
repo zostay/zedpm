@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -19,14 +20,14 @@ type ReleaseMintTask struct {
 func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
 	r, err := os.Open(GetPropertyChangelogFile(ctx))
 	if err != nil {
-		return fmt.Errorf("unable to open %s: %w", GetPropertyChangelogFile(ctx), err)
+		return format.WrapErr(err, "unable to open %s", GetPropertyChangelogFile(ctx))
 	}
 
 	newChangelog := GetPropertyChangelogFile(ctx) + ".new"
 
 	w, err := os.Create(newChangelog)
 	if err != nil {
-		return fmt.Errorf("unable to create %s: %w", newChangelog, err)
+		return format.WrapErr(err, "unable to create %s", newChangelog)
 	}
 
 	plugin.ForCleanup(ctx, func() { _ = os.Remove(newChangelog) })
@@ -55,12 +56,12 @@ func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
 	_ = r.Close()
 	err = w.Close()
 	if err != nil {
-		return fmt.Errorf("unable to close %s: %w", newChangelog, err)
+		return format.WrapErr(err, "unable to close %s", newChangelog)
 	}
 
 	err = os.Rename(newChangelog, GetPropertyChangelogFile(ctx))
 	if err != nil {
-		return fmt.Errorf("unable to overwrite %s with %s: %w", GetPropertyChangelogFile(ctx), newChangelog, err)
+		return format.WrapErr(err, "unable to overwrite %s with %s", GetPropertyChangelogFile(ctx), newChangelog)
 	}
 
 	plugin.ToAdd(ctx, GetPropertyChangelogFile(ctx))

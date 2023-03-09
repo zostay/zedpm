@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/changes"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
@@ -49,7 +50,7 @@ func CheckMode(ctx context.Context) changes.CheckMode {
 func LintChangelog(ctx context.Context) error {
 	changelog, err := os.Open(GetPropertyChangelogFile(ctx))
 	if err != nil {
-		return fmt.Errorf("unable to open Changes file: %w", err)
+		return format.WrapErr(err, "unable to open Changes file")
 	}
 
 	linter := changes.NewLinter(changelog, CheckMode(ctx))

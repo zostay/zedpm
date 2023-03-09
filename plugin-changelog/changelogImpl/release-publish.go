@@ -2,9 +2,9 @@ package changelogImpl
 
 import (
 	"context"
-	"fmt"
 	"io"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/changes"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
@@ -28,12 +28,12 @@ func (f *ReleasePublishTask) CaptureChangesInfo(ctx context.Context) error {
 	changelog := GetPropertyChangelogFile(ctx)
 	cr, err := changes.ExtractSection(changelog, vstring)
 	if err != nil {
-		return fmt.Errorf("unable to get log of changes: %w", err)
+		return format.WrapErr(err, "unable to get log of changes")
 	}
 
 	chgs, err := io.ReadAll(cr)
 	if err != nil {
-		return fmt.Errorf("unable to read log of changes: %w", err)
+		return format.WrapErr(err, "unable to read log of changes")
 	}
 
 	plugin.Set(ctx, goals.PropertyReleaseDescription, string(chgs))

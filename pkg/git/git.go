@@ -2,7 +2,6 @@ package git
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	gitConfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -78,21 +78,21 @@ func ReleaseTagRefSpec(ctx context.Context) (gitConfig.RefSpec, error) {
 func (g *Git) SetupGitRepo(ctx context.Context) error {
 	l, err := git.PlainOpen(".")
 	if err != nil {
-		return fmt.Errorf("unable to open git repository at .: %w", err)
+		return format.WrapErr(err, "unable to open git repository at .")
 	}
 
 	g.repo = l
 
 	r, err := g.repo.Remote("origin")
 	if err != nil {
-		return fmt.Errorf("unable to connect to remote origin: %w", err)
+		return format.WrapErr(err, "unable to connect to remote origin")
 	}
 
 	g.remote = r
 
 	w, err := g.repo.Worktree()
 	if err != nil {
-		return fmt.Errorf("unable to examine the working copy: %w", err)
+		return format.WrapErr(err, "unable to examine the working copy")
 	}
 
 	g.wc = w

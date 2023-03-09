@@ -2,8 +2,8 @@ package github
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -19,7 +19,7 @@ func GetPropertyGithubReleaseName(ctx context.Context) (string, error) {
 
 	version, err := goals.GetPropertyReleaseVersion(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to get or create a value for %q: %w", PropertyGithubReleaseName, err)
+		return "", format.WrapErr(err, "unable to get or create a value for %q", PropertyGithubReleaseName)
 	}
 
 	return defaultReleaseNamePrefix + version, nil

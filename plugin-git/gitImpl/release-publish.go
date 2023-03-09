@@ -7,6 +7,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 
+	"github.com/zostay/zedpm/format"
 	zGit "github.com/zostay/zedpm/pkg/git"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -28,17 +29,17 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 		Branch: zGit.TargetBranchRefName(ctx),
 	})
 	if err != nil {
-		return fmt.Errorf("unable to switch to %s branch: %w", zGit.TargetBranch(ctx), err)
+		return format.WrapErr(err, "unable to switch to %s branch", zGit.TargetBranch(ctx))
 	}
 
 	headRef, err := f.Repository().Head()
 	if err != nil {
-		return fmt.Errorf("unable to get HEAD ref of %s branch: %w", zGit.TargetBranch(ctx), err)
+		return format.WrapErr(err, "unable to get HEAD ref of %s branch", zGit.TargetBranch(ctx))
 	}
 
 	tag, err := zGit.GetPropertyGitReleaseTag(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to determine release tag: %w", err)
+		return format.WrapErr(err, "unable to determine release tag")
 	}
 
 	head := headRef.Hash()
@@ -46,14 +47,14 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 		Message: fmt.Sprintf("Release tag %q", tag),
 	})
 	if err != nil {
-		return fmt.Errorf("unable to tag release %s: %w", tag, err)
+		return format.WrapErr(err, "unable to tag release %s", tag)
 	}
 
 	plugin.ForCleanup(ctx, func() { _ = f.Repository().DeleteTag(tag) })
 
 	tagRefSpec, err := zGit.ReleaseTagRefSpec(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to determine release tag ref spec: %w", err)
+		return format.WrapErr(err, "unable to determine release tag ref spec")
 	}
 
 	err = f.Repository().Push(&git.PushOptions{
@@ -61,7 +62,7 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 		RefSpecs:   []config.RefSpec{tagRefSpec},
 	})
 	if err != nil {
-		return fmt.Errorf("unable to push tags to origin: %w", err)
+		return format.WrapErr(err, "unable to push tags to origin")
 	}
 
 	plugin.ForCleanup(ctx, func() {

@@ -2,8 +2,8 @@ package git
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -25,7 +25,7 @@ func GetPropertyGitReleaseTag(ctx context.Context) (string, error) {
 
 	version, err := goals.GetPropertyReleaseVersion(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to find or create a value for %q: %w", PropertyGitReleaseTag, err)
+		return "", format.WrapErr(err, "unable to find or create a value for %q", PropertyGitReleaseTag)
 	}
 
 	tagName := defaultReleaseTagPrefix + version
@@ -39,7 +39,7 @@ func GetPropertyGitReleaseBranch(ctx context.Context) (string, error) {
 
 	version, err := goals.GetPropertyReleaseVersion(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to find or create a value for %q: %w", PropertyGitReleaseBranch, err)
+		return "", format.WrapErr(err, "unable to find or create a value for %q", PropertyGitReleaseBranch)
 	}
 
 	branchName := defaultReleaseBranchPrefix + version

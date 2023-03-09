@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/format"
 )
 
 var (
@@ -86,14 +87,14 @@ func GoalName(task TaskDescription) (string, error) {
 // validateTaskPath is an internal function that validates the given task path.
 func validateTaskPath(name string) error {
 	if name[0] != '/' {
-		return fmt.Errorf("%s: %w", name, ErrBadTaskName)
+		return format.WrapErr(ErrBadTaskName, name)
 	}
 
 	name = name[1:]
 
 	idx := strings.IndexRune(name, '/')
 	if idx < 0 {
-		return fmt.Errorf("%s: %w", name, ErrBadTaskName)
+		return format.WrapErr(ErrBadTaskName, name)
 	}
 
 	return nil
