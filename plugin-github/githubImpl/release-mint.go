@@ -18,6 +18,11 @@ type ReleaseMintTask struct {
 	zGithub.Github
 }
 
+// Setup configures the github and git clients.
+func (s *ReleaseMintTask) Setup(ctx context.Context) error {
+	return s.SetupGithubClient(ctx)
+}
+
 // CreateGithubPullRequest creates the PR on github for monitoring the test
 // results for release testing. This will also be used to merge the release
 // branch when testing passes.

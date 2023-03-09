@@ -18,6 +18,11 @@ type ReleasePublishTask struct {
 	zGithub.Github
 }
 
+// Setup configures the github and git clients.
+func (s *ReleasePublishTask) Setup(ctx context.Context) error {
+	return s.SetupGithubClient(ctx)
+}
+
 // CheckReadyForMerge ensures that all the required tests are passing.
 func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 	owner, project, err := f.OwnerProject(ctx)

@@ -8,7 +8,11 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
-const PropertyGithubReleaseName = "github.release.name"
+const (
+	PropertyGithubReleaseName = "github.release.name"
+	PropertyGithubOwner       = "github.owner"
+	PropertyGithubProject     = "github.projecct"
+)
 
 const defaultReleaseNamePrefix = "Release v"
 
@@ -23,4 +27,12 @@ func GetPropertyGithubReleaseName(ctx context.Context) (string, error) {
 	}
 
 	return defaultReleaseNamePrefix + version, nil
+}
+
+func GetPropertyGithubOwner(ctx context.Context) string {
+	return plugin.GetString(ctx, PropertyGithubOwner)
+}
+
+func GetPropertyGithubProject(ctx context.Context) string {
+	return plugin.GetString(ctx, PropertyGithubProject)
 }

@@ -51,20 +51,23 @@ var githubPrefixes = []string{
 }
 
 func (g *Github) OwnerProject(ctx context.Context) (string, string, error) {
-	var owner, project string
-
-	if plugin.IsSet(ctx, "owner") {
-		owner = plugin.GetString(ctx, "owner")
-	}
-	if plugin.IsSet(ctx, "project") {
-		project = plugin.GetString(ctx, "project")
-	}
+	owner := GetPropertyGithubOwner(ctx)
+	project := GetPropertyGithubProject(ctx)
 
 	if owner != "" && project != "" {
 		return owner, project, nil
 	}
 
-	urls := g.Remote().Config().URLs
+	if g.Remote() == nil {
+		return owner, project, fmt.Errorf("unable to dtermine Github project and owner from git remote configuration: unable to load git remote client")
+	}
+
+	cfg := g.Remote().Config()
+	if cfg == nil {
+		return owner, project, fmt.Errorf("unable to determine Github project and owner from git remote configuration: no remote configuration found")
+	}
+
+	urls := cfg.URLs
 	if len(urls) == 0 {
 		return owner, project, fmt.Errorf("unable to determine Github project and owner from git remote configuration: no remote URLs found")
 	}

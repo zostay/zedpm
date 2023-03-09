@@ -23,6 +23,13 @@ func RunPlugin(impl plugin.Interface) {
 		JSONFormat: true,
 	})
 
+	// TODO If the plugin panics, that panic might not be received by zedpm for some reason, which makes debugging hard. Investigate and resolve.
+	//
+	// In the meantime, the solution I've found is to use the
+	// runPluginServerLocally setting in load.go to run the plugin in the same
+	// process as zedpm and debug cases when I am getting "connection refused"
+	// errors from plugins.
+
 	goPlugin.Serve(&goPlugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: goPlugin.PluginSet{
