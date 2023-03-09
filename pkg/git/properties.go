@@ -23,12 +23,13 @@ func GetPropertyGitReleaseTag(ctx context.Context) (string, error) {
 		return plugin.GetString(ctx, PropertyGitReleaseTag), nil
 	}
 
-	if version := goals.GetPropertyReleaseVersion(ctx); version != "" {
-		tagName := defaultReleaseTagPrefix + version
-		return tagName, nil
+	version, err := goals.GetPropertyReleaseVersion(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to find or create a value for %q: %w", PropertyGitReleaseTag, err)
 	}
 
-	return "", fmt.Errorf("missing required %q or %q settings", PropertyGitReleaseTag, goals.PropertyReleaseVersion)
+	tagName := defaultReleaseTagPrefix + version
+	return tagName, nil
 }
 
 func GetPropertyGitReleaseBranch(ctx context.Context) (string, error) {
@@ -36,10 +37,11 @@ func GetPropertyGitReleaseBranch(ctx context.Context) (string, error) {
 		return plugin.GetString(ctx, PropertyGitReleaseBranch), nil
 	}
 
-	if version := goals.GetPropertyReleaseVersion(ctx); version != "" {
-		branchName := defaultReleaseBranchPrefix + version
-		return branchName, nil
+	version, err := goals.GetPropertyReleaseVersion(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to find or create a value for %q: %w", PropertyGitReleaseBranch, err)
 	}
 
-	return "", fmt.Errorf("missing required %q or %q settings", PropertyGitReleaseBranch, goals.PropertyReleaseVersion)
+	branchName := defaultReleaseBranchPrefix + version
+	return branchName, nil
 }

@@ -17,9 +17,10 @@ func GetPropertyGithubReleaseName(ctx context.Context) (string, error) {
 		return plugin.GetString(ctx, PropertyGithubReleaseName), nil
 	}
 
-	if version := goals.GetPropertyReleaseVersion(ctx); version != "" {
-		return defaultReleaseNamePrefix + version, nil
+	version, err := goals.GetPropertyReleaseVersion(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to get or create a value for %q: %w", PropertyGithubReleaseName, err)
 	}
 
-	return "", fmt.Errorf("missing required properties %q or %q", PropertyGithubReleaseName, goals.PropertyReleaseVersion)
+	return defaultReleaseNamePrefix + version, nil
 }

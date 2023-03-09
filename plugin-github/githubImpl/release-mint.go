@@ -37,7 +37,7 @@ func (s *ReleaseMintTask) CreateGithubPullRequest(ctx context.Context) error {
 	}
 
 	body := fmt.Sprintf("Pull request to complete %q of project.", prName)
-	if version := goals.GetPropertyReleaseVersion(ctx); version != "" {
+	if version, err := goals.GetPropertyReleaseVersion(ctx); err == nil {
 		body = fmt.Sprintf("Pull request to complete release for v%s of project.", version)
 	}
 

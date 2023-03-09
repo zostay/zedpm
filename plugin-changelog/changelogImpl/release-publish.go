@@ -19,7 +19,11 @@ type ReleasePublishTask struct {
 // this release into the process configuration for use when creating the release
 // later.
 func (f *ReleasePublishTask) CaptureChangesInfo(ctx context.Context) error {
-	version := goals.GetPropertyReleaseVersion(ctx)
+	version, err := goals.GetPropertyReleaseVersion(ctx)
+	if err != nil {
+		return err
+	}
+
 	vstring := "v" + version
 	changelog := GetPropertyChangelogFile(ctx)
 	cr, err := changes.ExtractSection(changelog, vstring)

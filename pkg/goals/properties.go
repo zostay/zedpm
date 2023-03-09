@@ -2,6 +2,7 @@ package goals
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/zostay/zedpm/pkg/storage"
@@ -64,8 +65,13 @@ func SetPropertyReleaseVersion(ctx context.Context, version string) {
 }
 
 // GetPropertyReleaseVersion gets the value of release.version.
-func GetPropertyReleaseVersion(ctx context.Context) string {
-	return plugin.GetString(ctx, PropertyReleaseVersion)
+func GetPropertyReleaseVersion(ctx context.Context) (string, error) {
+	version := plugin.GetString(ctx, PropertyReleaseVersion)
+	if version != "" {
+		return version, nil
+	}
+
+	return "", fmt.Errorf("%q is not defined", PropertyReleaseVersion)
 }
 
 // SetPropertyReleaseDate sets the value of release.date.
@@ -74,8 +80,12 @@ func SetPropertyReleaseDate(ctx context.Context, date time.Time) {
 }
 
 // GetPropertyReleaseDate gets the value of release.date.
-func GetPropertyReleaseDate(ctx context.Context) time.Time {
-	return plugin.GetTime(ctx, PropertyReleaseDate)
+func GetPropertyReleaseDate(ctx context.Context) (time.Time, error) {
+	if date := plugin.GetTime(ctx, PropertyReleaseDate); !date.IsZero() {
+		return date, nil
+	}
+
+	return time.Time{}, fmt.Errorf("%q is not defined", PropertyReleaseDate)
 }
 
 // ExportPropertyName sets the given property name with teh PropertyExprotPrefix

@@ -35,8 +35,16 @@ func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
 	for sc.Scan() {
 		line := sc.Text()
 		if line == "WIP" || line == "WIP  TBD" {
-			version := goals.GetPropertyReleaseVersion(ctx)
-			todayTime := goals.GetPropertyReleaseDate(ctx)
+			version, err := goals.GetPropertyReleaseVersion(ctx)
+			if err != nil {
+				return err
+			}
+
+			todayTime, err := goals.GetPropertyReleaseDate(ctx)
+			if err != nil {
+				return err
+			}
+
 			today := todayTime.Format("2006-01-02")
 			_, _ = fmt.Fprintf(w, "v%s  %s\n", version, today)
 		} else {

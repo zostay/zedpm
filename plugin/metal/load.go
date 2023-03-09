@@ -10,6 +10,7 @@ import (
 
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/plugin"
+	"github.com/zostay/zedpm/plugin-changelog/changelogImpl"
 )
 
 // runPluginServerLocally is a variable that can be configured to replace or add
@@ -17,7 +18,9 @@ import (
 // process, which can allow for easier debugging.
 //
 // TODO This is a cheap debugging aid, but should be made nicer and configgable somehow for debugging those sticky problems.
-var runPluginServerLocally = map[string]plugin.Interface{}
+var runPluginServerLocally = map[string]plugin.Interface{
+	"changelog": &changelogImpl.Plugin{},
+}
 
 // Clients represents a list of Hashicorp plugins we are running to implement
 // the plugin interface of zedpm.
@@ -122,9 +125,10 @@ func LoadPlugins(
 		pcfg := &cfg.Plugins[i]
 
 		logger := hclog.New(&hclog.LoggerOptions{
-			Output: stdErr,
-			Level:  hclog.Warn,
-			Name:   "plugin-" + pcfg.Name,
+			Output:     stdErr,
+			Level:      hclog.Warn,
+			Name:       "plugin-" + pcfg.Name,
+			JSONFormat: true,
 		})
 
 		var client *goPlugin.Client
