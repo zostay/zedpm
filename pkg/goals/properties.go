@@ -80,12 +80,12 @@ func SetPropertyReleaseDate(ctx context.Context, date time.Time) {
 }
 
 // GetPropertyReleaseDate gets the value of release.date.
-func GetPropertyReleaseDate(ctx context.Context) (time.Time, error) {
+func GetPropertyReleaseDate(ctx context.Context) time.Time {
 	if date := plugin.GetTime(ctx, PropertyReleaseDate); !date.IsZero() {
-		return date, nil
+		return date
 	}
 
-	return time.Time{}, fmt.Errorf("%q is not defined", PropertyReleaseDate)
+	return time.Now()
 }
 
 // ExportPropertyName sets the given property name with teh PropertyExprotPrefix

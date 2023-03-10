@@ -41,10 +41,7 @@ func (s *ReleaseMintTask) FixupChangelog(ctx context.Context) error {
 				return err
 			}
 
-			todayTime, err := goals.GetPropertyReleaseDate(ctx)
-			if err != nil {
-				return err
-			}
+			todayTime := goals.GetPropertyReleaseDate(ctx)
 
 			today := todayTime.Format("2006-01-02")
 			_, _ = fmt.Fprintf(w, "v%s  %s\n", version, today)
