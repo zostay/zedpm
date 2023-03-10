@@ -12,7 +12,7 @@ import (
 
 var runCmd = &cobra.Command{
 	Use:   "run [ -t <target> ] *[ -d <key>=<value> ]",
-	Short: "Execute the tasks to achieve the named goal",
+	Short: "Execute the tasks to achieve the named goal.",
 }
 
 func init() {

@@ -13,7 +13,9 @@ import (
 	"github.com/zostay/zedpm/plugin/metal"
 )
 
-// configureTasks ests up the master plugin interface and plugin executor. Then,
+type CmdBuilder func(*master.InterfaceExecutor, *master.TaskGroup) func(*cobra.Command, []string) error
+
+// configureTasks sets up the master plugin interface and plugin executor. Then,
 // it contacts each plugin to see what it implements and uses that information
 // to configure the available run subcommands on the command-line.
 func configureTasks(
@@ -21,6 +23,7 @@ func configureTasks(
 	cfg *config.Config,
 	plugins metal.Clients,
 	attachCmd *cobra.Command,
+	runner CmdBuilder,
 ) error {
 	ifaces, err := metal.DispenseAll(plugins)
 	if err != nil {
@@ -38,12 +41,12 @@ func configureTasks(
 
 	cmds := make(map[string]*cobra.Command, len(groups))
 	for _, group := range groups {
-		cmd := configureGoalCommand(group, e)
+		cmd := configureGoalCommand(group, e, runner)
 		attachCmd.AddCommand(cmd)
 		cmds[group.Tree] = cmd
 
 		for _, sub := range group.SubTasks() {
-			cmd := configureTaskCommand(sub, e)
+			cmd := configureTaskCommand(sub, e, runner)
 			parent := path.Dir(sub.Tree)
 			cmds[parent].AddCommand(cmd)
 			cmds[sub.Tree] = cmd
@@ -58,6 +61,7 @@ func configureTasks(
 func configureTaskCommand(
 	group *master.TaskGroup,
 	e *master.InterfaceExecutor,
+	runner CmdBuilder,
 ) *cobra.Command {
 	shorts := make([]string, len(group.Tasks))
 	for i, task := range group.Tasks {
@@ -67,7 +71,7 @@ func configureTaskCommand(
 	return &cobra.Command{
 		Use:   path.Base(group.Tree),
 		Short: strings.Join(shorts, " "),
-		RunE:  RunGoal(e, group),
+		RunE:  runner(e, group),
 	}
 }
 
@@ -76,11 +80,12 @@ func configureTaskCommand(
 func configureGoalCommand(
 	group *master.TaskGroup,
 	e *master.InterfaceExecutor,
+	runner CmdBuilder,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:     group.Goal.Name(),
 		Short:   group.Goal.Short(),
 		Aliases: group.Goal.Aliases(),
-		RunE:    RunGoal(e, group),
+		RunE:    runner(e, group),
 	}
 }
