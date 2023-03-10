@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-github/v49/github"
 
 	"github.com/zostay/zedpm/format"
+	"github.com/zostay/zedpm/pkg/git"
 	zGithub "github.com/zostay/zedpm/pkg/github"
 	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
@@ -32,7 +33,7 @@ func (s *ReleaseMintTask) CreateGithubPullRequest(ctx context.Context) error {
 		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
-	branch, err := zGithub.ReleaseBranch(ctx)
+	branch, err := git.GetPropertyGitReleaseBranch(ctx)
 	if err != nil {
 		return format.WrapErr(err, "failed to get release branch name")
 	}
@@ -50,7 +51,7 @@ func (s *ReleaseMintTask) CreateGithubPullRequest(ctx context.Context) error {
 	_, _, err = s.Client().PullRequests.Create(ctx, owner, project, &github.NewPullRequest{
 		Title: github.String(prName),
 		Head:  github.String(branch),
-		Base:  github.String(zGithub.TargetBranch(ctx)),
+		Base:  github.String(git.GetPropertyGitTargetBranch(ctx)),
 		Body:  github.String(body),
 	})
 

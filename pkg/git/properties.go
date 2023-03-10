@@ -9,39 +9,42 @@ import (
 )
 
 const (
+	PropertyReleaseBranchPrefix = "release-v"
+	DefaultGitTargetBranch      = "master"
+
 	PropertyGitReleaseTag    = "git.release.tag"
 	PropertyGitReleaseBranch = "git.release.branch"
-)
-
-const (
-	defaultReleaseBranchPrefix = "release-v"
-	defaultReleaseTagPrefix    = "v"
+	PropertyGitTargetBranch  = "git.target.branch"
 )
 
 func GetPropertyGitReleaseTag(ctx context.Context) (string, error) {
-	if plugin.IsSet(ctx, PropertyGitReleaseTag) {
-		return plugin.GetString(ctx, PropertyGitReleaseTag), nil
+	tag := plugin.GetString(ctx, PropertyGitReleaseTag)
+	if tag != "" {
+		return tag, nil
 	}
 
-	version, err := goals.GetPropertyReleaseVersion(ctx)
-	if err != nil {
-		return "", format.WrapErr(err, "unable to find or create a value for %q", PropertyGitReleaseTag)
-	}
-
-	tagName := defaultReleaseTagPrefix + version
-	return tagName, nil
+	return goals.GetPropertyReleaseTag(ctx)
 }
 
 func GetPropertyGitReleaseBranch(ctx context.Context) (string, error) {
-	if plugin.IsSet(ctx, PropertyGitReleaseBranch) {
-		return plugin.GetString(ctx, PropertyGitReleaseBranch), nil
+	branch := plugin.GetString(ctx, PropertyGitReleaseBranch)
+	if branch != "" {
+		return branch, nil
 	}
 
 	version, err := goals.GetPropertyReleaseVersion(ctx)
 	if err != nil {
-		return "", format.WrapErr(err, "unable to find or create a value for %q", PropertyGitReleaseBranch)
+		return "", format.WrapErr(err, "unable to find or compute %q setting", PropertyGitReleaseBranch)
 	}
 
-	branchName := defaultReleaseBranchPrefix + version
-	return branchName, nil
+	return PropertyReleaseBranchPrefix + version, nil
+}
+
+func GetPropertyGitTargetBranch(ctx context.Context) string {
+	branch := plugin.GetString(ctx, PropertyGitTargetBranch)
+	if branch != "" {
+		return branch
+	}
+
+	return DefaultGitTargetBranch
 }

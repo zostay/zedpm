@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 )
 
 const (
-	PropertyExportPrefix = storage.ExportPrefix
+	PropertyReleaseTagPrefix = "v"
+	PropertyExportPrefix     = storage.ExportPrefix
 
 	PropertyReleaseDescription = "release.description"
 	PropertyReleaseVersion     = "release.version"
 	PropertyReleaseDate        = "release.date"
+	PropertyReleaseTag         = "release.tag"
 
 	PropertyLintPreRelease = "lint.prerelease"
 	PropertyLintRelease    = "lint.release"
@@ -56,7 +59,11 @@ func GetPropertyInfoOutputAll(ctx context.Context) bool {
 
 // GetPropertyReleaseDescription returns the value of release.description.
 func GetPropertyReleaseDescription(ctx context.Context) string {
-	return plugin.GetString(ctx, PropertyReleaseDescription)
+	desc := plugin.GetString(ctx, PropertyReleaseDescription)
+	if desc == "" {
+		desc = "No description provided."
+	}
+	return desc
 }
 
 // SetPropertyReleaseVersion sets the value of release.version.
@@ -113,7 +120,21 @@ func SetPropertyLintRelease(ctx context.Context, value bool) {
 	plugin.Set(ctx, PropertyLintRelease, value)
 }
 
-// GetPropertyLintRelease gets teh lint.release property.
+// GetPropertyLintRelease gets the lint.release property.
 func GetPropertyLintRelease(ctx context.Context) bool {
 	return plugin.GetBool(ctx, PropertyLintRelease)
+}
+
+// GetPropertyReleaseTag gets the release.tag property.
+func GetPropertyReleaseTag(ctx context.Context) (string, error) {
+	if plugin.IsSet(ctx, PropertyReleaseTag) {
+		return plugin.GetString(ctx, PropertyReleaseTag), nil
+	}
+
+	version, err := GetPropertyReleaseVersion(ctx)
+	if err != nil {
+		return "", format.WrapErr(err, "unable to get or create a value for %q", PropertyReleaseTag)
+	}
+
+	return PropertyReleaseTagPrefix + version, nil
 }

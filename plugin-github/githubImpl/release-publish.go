@@ -8,7 +8,9 @@ import (
 	"github.com/google/go-github/v49/github"
 
 	"github.com/zostay/zedpm/format"
+	"github.com/zostay/zedpm/pkg/git"
 	zGithub "github.com/zostay/zedpm/pkg/github"
+	"github.com/zostay/zedpm/pkg/goals"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -30,12 +32,12 @@ func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
-	branch, err := zGithub.ReleaseBranch(ctx)
+	branch, err := git.GetPropertyGitReleaseBranch(ctx)
 	if err != nil {
 		return format.WrapErr(err, "failed to get release branch name")
 	}
 
-	bp, _, err := f.Client().Repositories.GetBranchProtection(ctx, owner, project, zGithub.TargetBranch(ctx))
+	bp, _, err := f.Client().Repositories.GetBranchProtection(ctx, owner, project, git.GetPropertyGitTargetBranch(ctx))
 	if err != nil {
 		return format.WrapErr(err, "unable to get branches %s", branch)
 	}
@@ -107,7 +109,7 @@ func (f *ReleasePublishTask) MergePullRequest(ctx context.Context) error {
 		return format.WrapErr(err, "unable to list pull requests")
 	}
 
-	branch, err := zGithub.ReleaseBranch(ctx)
+	branch, err := git.GetPropertyGitReleaseBranch(ctx)
 	if err != nil {
 		return format.WrapErr(err, "failed to get release branch name")
 	}
@@ -151,7 +153,7 @@ func (f *ReleasePublishTask) CreateRelease(ctx context.Context) error {
 		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
-	tag, err := zGithub.ReleaseTag(ctx)
+	tag, err := git.GetPropertyGitReleaseTag(ctx)
 	if err != nil {
 		return format.WrapErr(err, "failed to get release tag name")
 	}
@@ -161,7 +163,7 @@ func (f *ReleasePublishTask) CreateRelease(ctx context.Context) error {
 		return format.WrapErr(err, "failed to get release name")
 	}
 
-	changesInfo := zGithub.ReleaseDescription(ctx)
+	changesInfo := goals.GetPropertyReleaseDescription(ctx)
 	_, _, err = f.Client().Repositories.CreateRelease(ctx, owner, project,
 		&github.RepositoryRelease{
 			TagName:              github.String(tag),

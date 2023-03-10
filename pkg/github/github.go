@@ -10,8 +10,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/zostay/zedpm/pkg/git"
-	"github.com/zostay/zedpm/pkg/goals"
-	"github.com/zostay/zedpm/plugin"
 )
 
 // Github provides a client object for accessing the Github API.
@@ -97,33 +95,4 @@ func (g *Github) OwnerProject(ctx context.Context) (string, string, error) {
 	}
 
 	return owner, project, fmt.Errorf("unable to determing Github project and owner from git remote configuration: remote URL does not look like a github URL")
-}
-
-func ReleaseDescription(ctx context.Context) string {
-	desc := plugin.GetString(ctx, goals.PropertyReleaseDescription)
-	if desc == "" {
-		desc = "No description provided."
-	}
-	return desc
-}
-
-func ReleaseTag(ctx context.Context) (string, error) {
-	if plugin.IsSet(ctx, "release.tag") {
-		return plugin.GetString(ctx, "release.tag"), nil
-	}
-	return "", fmt.Errorf("missing required \"release.tag\" setting")
-}
-
-func ReleaseBranch(ctx context.Context) (string, error) {
-	if plugin.IsSet(ctx, "release.branch") {
-		return plugin.GetString(ctx, "release.branch"), nil
-	}
-	return "", fmt.Errorf("missing required \"release.branch\" setting")
-}
-
-func TargetBranch(ctx context.Context) string {
-	if plugin.IsSet(ctx, "target_branch") {
-		return plugin.GetString(ctx, "target_branch")
-	}
-	return "master"
 }
