@@ -29,6 +29,11 @@ type DepsGraph struct {
 // addEdge adds a new edge to the DAG.
 func addEdge(edges map[string][]string, from, to string) {
 	if _, hasEdgeFrom := edges[from]; hasEdgeFrom {
+		for _, e := range edges[from] {
+			if e == to {
+				return
+			}
+		}
 		edges[from] = append(edges[from], to)
 	} else {
 		edges[from] = []string{to}
@@ -102,9 +107,9 @@ func NewDepsGraph(goal string, tasks []plugin.TaskDescription) *DepsGraph {
 	edges := make(map[string][]string, len(tasks))
 	goalPath := "/" + goal
 
-	nodes[goalPath] = &DepNode{goalPath, tasks}
+	nodes[goalPath] = &DepNode{goalPath, []plugin.TaskDescription{}}
 
-	establishNode := func(tree string) *DepNode {
+	establishNode := func(tree string) {
 		result := nodes[tree]
 		if result == nil {
 			result = &DepNode{
@@ -113,7 +118,6 @@ func NewDepsGraph(goal string, tasks []plugin.TaskDescription) *DepsGraph {
 			}
 			nodes[tree] = result
 		}
-		return result
 	}
 
 	for _, task := range tasks {
@@ -127,12 +131,11 @@ func NewDepsGraph(goal string, tasks []plugin.TaskDescription) *DepsGraph {
 		for _, part := range taskNames {
 			tree += "/" + part
 
-			node := establishNode(tree)
-			if tree == task.Name() {
-				node.Tasks = append(node.Tasks, task)
-			}
+			establishNode(tree)
 
-			addEdge(edges, tree, parent)
+			addEdge(edges, parent, tree)
+
+			parent = tree
 		}
 
 		nodes[task.Name()].Tasks = append(nodes[task.Name()].Tasks, task)
@@ -184,7 +187,7 @@ func (d *DepsGraph) GroupOrder() ([][]plugin.TaskDescription, error) {
 
 	out := make([][]plugin.TaskDescription, 0, len(d.nodes))
 	foundNodes := make([]string, 0, len(d.nodes))
-	for len(workEdges) > 0 {
+	for len(workNodes) > 0 {
 		for from := range workNodes {
 			if edges, hasAnyEdges := workEdges[from]; hasAnyEdges {
 				// detect nodes that get mentioned, but aren't defined
