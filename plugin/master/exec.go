@@ -276,24 +276,6 @@ func (e *InterfaceExecutor) ExecuteStage(
 	ctx context.Context,
 	stage []plugin.TaskDescription,
 ) error {
-	return RunTasksAndAccumulateErrors[int, plugin.TaskDescription](ctx,
-		NewSliceIterator[plugin.TaskDescription](stage),
-		func(ctx context.Context, _ int, task plugin.TaskDescription) error {
-			return e.Execute(ctx, task.Name())
-		},
-	)
-}
-
-// Execute will execute a single task and return an error if execution fails.
-func (e *InterfaceExecutor) Execute(
-	ctx context.Context,
-	taskName string,
-) error {
-	task, err := e.prepare(ctx, taskName)
-	if err != nil {
-		return format.WrapErr(err, "failed to prepare task %q", taskName)
-	}
-
 	stdOps := []struct {
 		name     string
 		function func(context.Context, string, plugin.Task) error
@@ -309,10 +291,36 @@ func (e *InterfaceExecutor) Execute(
 	}
 
 	for _, stdOp := range stdOps {
-		err = stdOp.function(ctx, taskName, task)
+		err := RunTasksAndAccumulateErrors[int, plugin.TaskDescription](ctx,
+			NewSliceIterator[plugin.TaskDescription](stage),
+			func(ctx context.Context, _ int, task plugin.TaskDescription) error {
+				return e.Execute(ctx, task.Name(), stdOp.name, stdOp.function)
+			},
+		)
+
 		if err != nil {
-			return format.WrapErr(err, "failed to execute operation %s", stdOp.name)
+			return err
 		}
+	}
+
+	return nil
+}
+
+// Execute will execute a single task and return an error if execution fails.
+func (e *InterfaceExecutor) Execute(
+	ctx context.Context,
+	taskName string,
+	stageName string,
+	op func(context.Context, string, plugin.Task) error,
+) error {
+	task, err := e.prepare(ctx, taskName)
+	if err != nil {
+		return format.WrapErr(err, "failed to prepare task %q", taskName)
+	}
+
+	err = op(ctx, taskName, task)
+	if err != nil {
+		return format.WrapErr(err, "failed to execute operation %s", stageName)
 	}
 
 	return nil
