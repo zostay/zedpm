@@ -64,9 +64,20 @@ func (ti *Interface) ctxFor(
 	ctx context.Context,
 	taskName string,
 	pluginName string,
-) (context.Context, *plugin.Context) {
-	pctx := plugin.NewConfigContext(ti.logger, ti.properties, taskName, ti.targetName, pluginName, ti.cfg)
-	return plugin.InitializeContext(ctx, pctx), pctx
+) (context.Context, *plugin.Context, error) {
+	pctx, err := plugin.NewConfigContext(
+		ti.logger,
+		ti.properties,
+		taskName,
+		ti.targetName,
+		pluginName,
+		ti.cfg,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return plugin.InitializeContext(ctx, pctx), pctx, nil
 }
 
 // Implements calls Implements on all the associated plugins and returns a
@@ -75,7 +86,11 @@ func (ti *Interface) ctxFor(
 func (ti *Interface) Implements(ctx context.Context) ([]plugin.TaskDescription, error) {
 	taskDescs := make([]plugin.TaskDescription, 0, 100)
 	for pluginName, iface := range ti.is {
-		ctx, _ := ti.ctxFor(ctx, "", pluginName)
+		ctx, _, err := ti.ctxFor(ctx, "", pluginName)
+		if err != nil {
+			return nil, err
+		}
+
 		tds, err := iface.Implements(ctx)
 		if err != nil {
 			return nil, err
@@ -157,7 +172,11 @@ func (ti *Interface) Prepare(
 		ctx,
 		NewMapIterator[string, plugin.Interface](ti.is),
 		func(ctx context.Context, pluginName string, iface plugin.Interface) (*taskInfo, error) {
-			ctx, _ = ti.ctxFor(ctx, taskName, pluginName)
+			ctx, _, err := ti.ctxFor(ctx, taskName, pluginName)
+			if err != nil {
+				return nil, format.WrapErr(err, "unable to setup plugin context", err)
+			}
+
 			mayPrepare, err := ti.implements(ctx, iface, taskName)
 			if err != nil {
 				return nil, format.WrapErr(err, "plugin %q failed implements check for task %q", pluginName, taskName)
@@ -210,7 +229,11 @@ func (ti *Interface) Cancel(
 		ctx,
 		NewSliceIterator[*taskInfo](task.taskInfo),
 		func(ctx context.Context, _ int, p *taskInfo) error {
-			ctx, _ = ti.ctxFor(ctx, taskName, p.pluginName)
+			ctx, _, err := ti.ctxFor(ctx, taskName, p.pluginName)
+			if err != nil {
+				return format.WrapErr(err, "unable to setup plugin context during cancel", err)
+			}
+
 			return p.iface.Cancel(ctx, p.task)
 		})
 }
@@ -229,7 +252,11 @@ func (ti *Interface) Complete(
 		ctx,
 		NewSliceIterator[*taskInfo](task.taskInfo),
 		func(ctx context.Context, _ int, p *taskInfo) error {
-			ctx, _ = ti.ctxFor(ctx, taskName, p.pluginName)
+			ctx, _, err := ti.ctxFor(ctx, taskName, p.pluginName)
+			if err != nil {
+				return format.WrapErr(err, "unable to setup plugin context during complete", err)
+			}
+
 			return p.iface.Complete(ctx, p.task)
 		})
 }

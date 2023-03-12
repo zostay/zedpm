@@ -70,8 +70,12 @@ func NewConfigContext(
 	targetName string,
 	pluginName string,
 	cfg *config.Config,
-) *Context {
-	return NewContext(logger, cfg.ToKV(runtime, taskName, targetName, pluginName))
+) (*Context, error) {
+	properties, err := cfg.ToKV(runtime, taskName, targetName, pluginName)
+	if err != nil {
+		return nil, err
+	}
+	return NewContext(logger, properties), nil
 }
 
 // UpdateStorage allows the owner of the Context to update the properties of the

@@ -80,7 +80,11 @@ func GoalName(task TaskDescription) (string, error) {
 		return "", err
 	}
 
-	goal, _ := config.GoalAndTaskNames(taskPath)
+	goal, _, _, err := config.GoalPhaseAndTaskName(taskPath)
+	if err != nil {
+		return "", err
+	}
+
 	return goal, nil
 }
 

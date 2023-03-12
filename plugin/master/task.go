@@ -138,8 +138,12 @@ func (t *Task) executeTaskOperation(
 	for i := range t.taskInfo {
 		info := t.taskInfo[i]
 		opfs = append(opfs, func(ctx context.Context) error {
-			ctx, pctx := t.ti.ctxFor(ctx, taskName, info.pluginName)
-			err := op(ctx, info.task)
+			ctx, pctx, err := t.ti.ctxFor(ctx, taskName, info.pluginName)
+			if err != nil {
+				return format.WrapErr(err, "unable to setup plugin context", err)
+			}
+
+			err = op(ctx, info.task)
 			if err != nil {
 				return err
 			}
@@ -179,7 +183,10 @@ func (t *Task) evaluateOperations(
 	opInfo := make([]*operationInfo, 0, len(t.taskInfo))
 	accChanges := storage.New()
 	for _, tInfo := range t.taskInfo {
-		ctx, pctx := t.ti.ctxFor(ctx, t.taskName, tInfo.pluginName)
+		ctx, pctx, err := t.ti.ctxFor(ctx, t.taskName, tInfo.pluginName)
+		if err != nil {
+			return nil, format.WrapErr(err, "unable to setup plugin context", err)
+		}
 
 		theseOps, err := op(tInfo.task, ctx)
 		if err != nil {

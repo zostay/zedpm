@@ -1,8 +1,9 @@
 package config
 
 import (
+	"errors"
 	"io"
-	"path"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -10,6 +11,22 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 
 	"github.com/zostay/zedpm/pkg/storage"
+)
+
+var (
+	// ErrMissingPrefix is returned by GoalPhaseAndTaskName when the initial
+	// slash is missing.
+	ErrMissingPrefix = errors.New("task path is missing prefix")
+
+	// ErrIncorrectName is returned by GoalPhaseAndTaskName when any of the
+	// names are not correct. The names are made up of one or more words joined
+	// by a hyphen. Each word must start with an underscore or letter and then
+	// may be followed by zero or more underscores, letters, or numbers.
+	ErrIncorrectName = errors.New("task path contains incorrect names")
+
+	// ErrTooManyNames is returned by GoalPhaseAndTaskName when more than three
+	// names are present in the task path.
+	ErrTooManyNames = errors.New("task path contains too many names")
 )
 
 // Config is the master configuration as we use it in the application. The
@@ -30,36 +47,6 @@ type Config struct {
 	Plugins []PluginConfig
 }
 
-type GoalConfig struct {
-	// Name is the name of the goal being configured.
-	Name string
-
-	// EnabledPlugins creates an allow list of plugins to use when executing
-	// this goal. If an enable list is provided, then only plugins on this list
-	// will be executed.
-	//
-	// TODO Implement EnabledPlugins functionality for goals.
-	EnabledPlugins []string
-
-	// DisabledPlugins creates a block list of plugins to disable when executing
-	// this goal. If a disabled list is provided, then the listed plugins will
-	// not be executed when running this goal, even if they are listed in the
-	// EnabledPlugins list.
-	//
-	// TODO Implement DisabledPlugins functionality for goals.
-	DisabledPlugins []string
-
-	// Properties provides settings that override globals when executing this
-	// goal or one of its sub-tasks.
-	Properties storage.KV
-
-	// Tasks provides configuration of sub-tasks of this goal.
-	Tasks []TaskConfig
-
-	// Targets provides configuration of targets as applies ot this goal.
-	Targets []TargetConfig
-}
-
 // PluginConfig holds the configuration to use for a particular plugin.
 type PluginConfig struct {
 	// Name is the name to give the plugin.
@@ -73,42 +60,59 @@ type PluginConfig struct {
 	Properties storage.KV
 }
 
+// ActionConfig defines common configuration for goals, phases, and tasks.
+type ActionConfig struct {
+	// Name is the name of the action being configured.
+	Name string
+
+	// EnabledPlugins creates an allow list of plugins to use when executing
+	// this action. If an enable list is provided, then only plugins on this
+	// list will be executed.
+	//
+	// TODO Implement EnabledPlugins functionality.
+	EnabledPlugins []string
+
+	// DisabledPlugins creates a block list of plugins to disable when executing
+	// this action. If a disabled list is provided, then the listed plugins will
+	// not be executed when running this goal, even if they are listed in the
+	// EnabledPlugins list.
+	//
+	// TODO Implement DisabledPlugins functionality.
+	DisabledPlugins []string
+
+	// Properties provides settings that override globals when executing this
+	// action.
+	Properties storage.KV
+
+	// Targets provides configuration of targets as applies ot this action.
+	Targets []TargetConfig
+}
+
+// GoalConfig contains the configuration assigned to goals, which is also
+// inherited by phases and tasks.
+type GoalConfig struct {
+	ActionConfig
+
+	// Tasks provides configuration of sub-tasks of this goal.
+	Phases []PhaseConfig
+}
+
+// PhaseConfig contains the configuration assigned to phases, which is also
+// inherited by tasks.
+type PhaseConfig struct {
+	ActionConfig
+
+	// Tasks provides configuration of sub-tasks of this goal.
+	Tasks []TaskConfig
+}
+
 // TaskConfig is the configuration for a sub-task, which is always nested within
 // a goal configuration. This configuration will be employed while running this
 // sub-task regardless of how executed from the command-line.
 //
 // TODO The sub-sub-task configuration here seems inconsistent and needs a look.
 type TaskConfig struct {
-	// Name is the name of the sub-task.
-	Name string
-
-	// SubTask is the name of the sub-sub-task (and may be empty).
-	SubTask string
-
-	// EnabledPlugins creates an allow list of plugins to use when executing
-	// this sub-task. If an enable list is provided, then only plugins on this
-	// list will be executed.
-	//
-	// TODO Implement EnabledPlugins functionality for tasks.
-	EnabledPlugins []string
-
-	// DisabledPlugins creates a block list of plugins to disable when executing
-	// this sub-task. If a disabled list is provided, then the listed plugins
-	// will not be executed when running this sub-task, even if they are listed
-	// in the EnabledPlugins list.
-	//
-	// TODO Implement DisabledPlugins functionality for tasks.
-	DisabledPlugins []string
-
-	// Properties are the settings used to override globals and goal settings
-	// when executing this sub-task.
-	Properties storage.KV
-
-	// Targets is configuration that should apply just to this sub-task.
-	Targets []TargetConfig
-
-	// Tasks is nested sub-tasks.
-	Tasks []TaskConfig
+	ActionConfig
 }
 
 // TargetConfig is the configuration of a target, which allows for multiple
@@ -161,65 +165,113 @@ func Load(filename string, in io.Reader) (*Config, error) {
 	return decodeRawConfig(&raw)
 }
 
-// GoalAndTaskNames splits a string of the form /goal/task/subtask and returns
-// it as "goal" and []string{"task", "subtask"}.
-func GoalAndTaskNames(taskPath string) (string, []string) {
-	taskPath = path.Clean(taskPath)
-	if taskPath == "" || taskPath == "/" {
-		return "", nil
-	}
+var legalName = regexp.MustCompile(`[_\PL][_\PL\PN]*(?:-[_\PL][_\PL\PN]*)*`)
 
+// GoalPhaseAndTaskName splits a string of the form /goal/phase/task and returns
+// it returns strings "goal", "phase", and "task". Returns an error if the
+// task path is badly formed.
+//
+// The following error condition are possible:
+//
+// Returns ErrMissingParts if the task path is missing the initial slash or
+// there are not enough slashes present.
+//
+// Returns ErrIncorrectName if a goal, phase, or task name is not legal. The
+// legal names must contain one or more words. Each word is defined as value
+// starting with an underscore or letter (any Unicode letter) followed by 0 or
+// more underscores, letters, or numbers (again, any Unicode number). Multiple
+// words must be joined with a hyphen. That is, this
+// "/_foo44-blahblah/florby_flah/bl00p" defines goal, phase, and task with legal
+// name values, but "/44_floo/feebly fly/%&$*" is illegal with all three names
+// being disallowed for different reasons.
+//
+// Returns ErrTooManyNames if the task path contains more than three slashes.
+func GoalPhaseAndTaskName(taskPath string) (string, string, string, error) {
 	taskParts := strings.Split(taskPath, "/")
-	if taskParts[0] == "" {
-		taskParts = taskParts[1:]
+	if taskParts[0] != "" || len(taskParts) < 2 {
+		return "", "", "", ErrMissingPrefix
 	}
 
-	if len(taskParts) == 1 {
-		return taskParts[0], nil
+	taskParts = taskParts[1:]
+	for _, taskPart := range taskParts[1:] {
+		if !legalName.MatchString(taskPart) {
+			return "", "", "", ErrIncorrectName
+		}
 	}
 
-	return taskParts[0], taskParts[1:]
+	if len(taskParts) > 3 {
+		return "", "", "", ErrTooManyNames
+	}
+
+	var goalName, phaseName, taskName string
+
+	goalName = taskParts[0]
+	if len(taskParts) > 1 {
+		phaseName = taskParts[1]
+	}
+	if len(taskParts) > 2 {
+		taskName = taskParts[2]
+	}
+
+	return goalName, phaseName, taskName, nil
 }
 
 // GetGoalFromPath returns the goal configuration for the given task path.
-func (c *Config) GetGoalFromPath(taskPath string) *GoalConfig {
-	goalName, _ := GoalAndTaskNames(taskPath)
-	return c.GetGoal(goalName)
+func (c *Config) GetGoalFromPath(taskPath string) (*GoalConfig, error) {
+	goalName, _, _, err := GoalPhaseAndTaskName(taskPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.GetGoal(goalName), nil
 }
 
 // syntheticGoal is used to generate an empty GoalConfig in cases where we need
 // such a thing.
 func syntheticGoal(name string) *GoalConfig {
 	return &GoalConfig{
-		Name: name,
+		ActionConfig: ActionConfig{
+			Name: name,
+		},
 	}
 }
 
-// GetGoalAndTasks returns the goal and configuration of applicable sub-tasks
-// for the given task path.
-func (c *Config) GetGoalAndTasks(taskPath string) (*GoalConfig, []*TaskConfig) {
-	goalName, taskNames := GoalAndTaskNames(taskPath)
+// GetGoalPhaseAndTaskConfig returns the goal, phase, and task configuration of
+// the given task path.
+func (c *Config) GetGoalPhaseAndTaskConfig(
+	taskPath string,
+) (*GoalConfig, *PhaseConfig, *TaskConfig, error) {
+	goalName, phaseName, taskName, err := GoalPhaseAndTaskName(taskPath)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	goal := c.GetGoal(goalName)
 	if goal == nil {
 		goal = syntheticGoal(goalName)
 	}
 
-	tasks := make([]*TaskConfig, 0, len(taskNames))
-	taskList := goal.Tasks
-
-TaskLoop:
-	for _, taskName := range taskNames {
-		for j := range taskList {
-			if taskList[j].Name == taskName {
-				tasks = append(tasks, &taskList[j])
-				taskList = taskList[j].Tasks
-				continue TaskLoop
+	var phase *PhaseConfig
+	if phaseName != "" {
+		for _, phaseConfig := range goal.Phases {
+			if phaseConfig.Name == phaseName {
+				phase = &phaseConfig
+				break
 			}
 		}
-		break
 	}
-	return goal, tasks
+
+	var task *TaskConfig
+	if phase != nil && taskName != "" {
+		for _, taskConfig := range phase.Tasks {
+			if taskConfig.Name == taskName {
+				task = &taskConfig
+				break
+			}
+		}
+	}
+
+	return goal, phase, task, nil
 }
 
 // GetGoal returns the GoalConfig for the given goal name.
@@ -240,6 +292,32 @@ func (c *Config) GetPlugin(pluginName string) *PluginConfig {
 		}
 	}
 	return nil
+}
+
+type targetable interface {
+	GetTarget(string) *TargetConfig
+	GetProperties() storage.KV
+}
+
+// targetableToKV adds one or more storage.KV objects to the given layer slice
+// and returns the updated slice.
+func targetableToKV[T targetable](
+	in T,
+	targetName string,
+	layers []storage.KV,
+) []storage.KV {
+	var target *TargetConfig
+	if targetName != "" {
+		target = in.GetTarget(targetName)
+	}
+
+	if target != nil {
+		layers = append(layers, target.Properties)
+	}
+
+	layers = append(layers, in.GetProperties())
+
+	return layers
 }
 
 // ToKV builds and returns a storage.KVLayer containing the configuration layers
@@ -268,49 +346,40 @@ func (c *Config) ToKV(
 	taskPath,
 	targetName,
 	pluginName string,
-) *storage.KVLayer {
+) (*storage.KVLayer, error) {
 	var (
 		goal   *GoalConfig
-		tasks  []*TaskConfig
+		phase  *PhaseConfig
+		task   *TaskConfig
 		plugin *PluginConfig
+		err    error
 	)
 
 	if taskPath != "" {
-		goal, tasks = c.GetGoalAndTasks(taskPath)
+		goal, phase, task, err = c.GetGoalPhaseAndTaskConfig(taskPath)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	if pluginName != "" {
 		plugin = c.GetPlugin(pluginName)
 	}
 
 	// topmost layer is for runtime properties
-	layers := make([]storage.KV, 0, (len(tasks)+2)*2+1)
+	layers := make([]storage.KV, 0, 8)
 	layers = append(layers, properties)
 
-	for _, task := range tasks {
-		var target *TargetConfig
-		if targetName != "" {
-			target = task.GetTarget(targetName)
-		}
+	if task != nil {
+		layers = targetableToKV[*TaskConfig](task, targetName, layers)
+	}
 
-		if target != nil {
-			layers = append(layers, target.Properties)
-		}
-
-		layers = append(layers, task.Properties)
-
+	if phase != nil {
+		layers = targetableToKV[*PhaseConfig](phase, targetName, layers)
 	}
 
 	if goal != nil {
-		var target *TargetConfig
-		if targetName != "" {
-			target = goal.GetTarget(targetName)
-		}
-
-		if target != nil {
-			layers = append(layers, target.Properties)
-		}
-
-		layers = append(layers, goal.Properties)
+		layers = targetableToKV[*GoalConfig](goal, targetName, layers)
 	}
 
 	if plugin != nil {
@@ -319,25 +388,20 @@ func (c *Config) ToKV(
 
 	layers = append(layers, c.Properties)
 
-	return storage.Layers(layers...)
+	return storage.Layers(layers...), nil
 }
 
 // GetTarget returns the TargetConfig for the given target name.
-func (g *GoalConfig) GetTarget(targetName string) *TargetConfig {
-	for i := range g.Targets {
-		if g.Targets[i].Name == targetName {
-			return &g.Targets[i]
+func (a *ActionConfig) GetTarget(targetName string) *TargetConfig {
+	for i := range a.Targets {
+		if a.Targets[i].Name == targetName {
+			return &a.Targets[i]
 		}
 	}
 	return nil
 }
 
-// GetTarget returns the TargetConfig for the given target name.
-func (t *TaskConfig) GetTarget(targetName string) *TargetConfig {
-	for i := range t.Targets {
-		if t.Targets[i].Name == targetName {
-			return &t.Targets[i]
-		}
-	}
-	return nil
+// GetProperties returns the properties.
+func (a *ActionConfig) GetProperties() storage.KV {
+	return a.Properties
 }

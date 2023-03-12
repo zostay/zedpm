@@ -18,9 +18,32 @@ type RawConfig struct {
 	Plugins []RawPluginConfig `hcl:"plugin,block"`
 }
 
+// RawPluginConfig is the configuration specification for HCL for plugin
+// configuration. See PluginConfig for details on what the fields represent.
+type RawPluginConfig struct {
+	Name    string `hcl:"name,label"`
+	Command string `hcl:"command,label"`
+
+	Properties cty.Value `hcl:"properties,optional"`
+}
+
 // RawGoalConfig is the configuration specification for HCL for goal
 // configuration. See GoalConfig for details on what the fields represent.
 type RawGoalConfig struct {
+	Name string `hcl:"name,label"`
+
+	EnabledPlugins  []string `hcl:"enabled,optional"`
+	DisabledPlugins []string `hcl:"disabled,optional"`
+
+	Properties cty.Value `hcl:"properties,optional"`
+
+	Phases  []RawPhaseConfig  `hcl:"phase,block"`
+	Targets []RawTargetConfig `hcl:"target,block"`
+}
+
+// RawPhaseConfig is the configuration specification for HCL for phase
+// configuration. See PhaseConfig for details on what the fields represent.
+type RawPhaseConfig struct {
 	Name string `hcl:"name,label"`
 
 	EnabledPlugins  []string `hcl:"enabled,optional"`
@@ -32,20 +55,10 @@ type RawGoalConfig struct {
 	Targets []RawTargetConfig `hcl:"target,block"`
 }
 
-// RawPluginConfig is the configuration specification for HCL for plugin
-// configuration. See PluginConfig for details on what the fields represent.
-type RawPluginConfig struct {
-	Name    string `hcl:"name,label"`
-	Command string `hcl:"command,label"`
-
-	Properties cty.Value `hcl:"properties,optional"`
-}
-
 // RawTaskConfig is the configuration specification for HCL for task
 // configuration. See TaskConfig for details on what the fields represent.
 type RawTaskConfig struct {
-	Name    string `hcl:"name,label"`
-	SubTask string `hcl:"subtask,label"`
+	Name string `hcl:"name,label"`
 
 	EnabledPlugins  []string `hcl:"enabled,optional"`
 	DisabledPlugins []string `hcl:"disabled,optional"`
@@ -53,7 +66,6 @@ type RawTaskConfig struct {
 	Properties cty.Value `hcl:"properties,optional"`
 
 	Targets []RawTargetConfig `hcl:"target,block"`
-	Tasks   []RawTaskConfig   `hcl:"task,block"`
 }
 
 // RawTargetConfig is the configuration specification for HCL for target
@@ -166,8 +178,53 @@ func decodeRawList[In any, Out any](
 	return out, nil
 }
 
+// decodeRawPlugin converts a RawPluginConfig into a PluginConfig.
+func decodeRawPlugin(prefix string, in *RawPluginConfig) (*PluginConfig, error) {
+	pn := p(prefix, in.Name)
+	props, err := decodeRawProperties(pn, in.Properties)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PluginConfig{
+		Name:       in.Name,
+		Command:    in.Command,
+		Properties: props,
+	}, nil
+}
+
 // decodeRawGoal converts a RawGoalConfig into a GoalConfig.
 func decodeRawGoal(prefix string, in *RawGoalConfig) (*GoalConfig, error) {
+	pn := p(prefix, in.Name)
+	props, err := decodeRawProperties(pn, in.Properties)
+	if err != nil {
+		return nil, err
+	}
+
+	phases, err := decodeRawList[RawPhaseConfig, PhaseConfig](pn, in.Phases, decodeRawPhase)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := decodeRawList[RawTargetConfig, TargetConfig](pn, in.Targets, decodeRawTarget)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GoalConfig{
+		ActionConfig: ActionConfig{
+			Name:            in.Name,
+			EnabledPlugins:  in.EnabledPlugins,
+			DisabledPlugins: in.DisabledPlugins,
+			Properties:      props,
+			Targets:         targets,
+		},
+		Phases: phases,
+	}, nil
+}
+
+// decodeRawPhase converts a RawPhaseConfig into a PhaseConfig.
+func decodeRawPhase(prefix string, in *RawPhaseConfig) (*PhaseConfig, error) {
 	pn := p(prefix, in.Name)
 	props, err := decodeRawProperties(pn, in.Properties)
 	if err != nil {
@@ -184,28 +241,15 @@ func decodeRawGoal(prefix string, in *RawGoalConfig) (*GoalConfig, error) {
 		return nil, err
 	}
 
-	return &GoalConfig{
-		Name:            in.Name,
-		EnabledPlugins:  in.EnabledPlugins,
-		DisabledPlugins: in.DisabledPlugins,
-		Properties:      props,
-		Tasks:           tasks,
-		Targets:         targets,
-	}, nil
-}
-
-// decodeRawPlugin converts a RawPluginConfig into a PluginConfig.
-func decodeRawPlugin(prefix string, in *RawPluginConfig) (*PluginConfig, error) {
-	pn := p(prefix, in.Name)
-	props, err := decodeRawProperties(pn, in.Properties)
-	if err != nil {
-		return nil, err
-	}
-
-	return &PluginConfig{
-		Name:       in.Name,
-		Command:    in.Command,
-		Properties: props,
+	return &PhaseConfig{
+		ActionConfig: ActionConfig{
+			Name:            in.Name,
+			EnabledPlugins:  in.EnabledPlugins,
+			DisabledPlugins: in.DisabledPlugins,
+			Properties:      props,
+			Targets:         targets,
+		},
+		Tasks: tasks,
 	}, nil
 }
 
@@ -222,19 +266,14 @@ func decodeRawTask(prefix string, in *RawTaskConfig) (*TaskConfig, error) {
 		return nil, err
 	}
 
-	tasks, err := decodeRawList[RawTaskConfig, TaskConfig](pn, in.Tasks, decodeRawTask)
-	if err != nil {
-		return nil, err
-	}
-
 	return &TaskConfig{
-		Name:            in.Name,
-		SubTask:         in.SubTask,
-		EnabledPlugins:  in.EnabledPlugins,
-		DisabledPlugins: in.DisabledPlugins,
-		Properties:      props,
-		Targets:         targets,
-		Tasks:           tasks,
+		ActionConfig: ActionConfig{
+			Name:            in.Name,
+			EnabledPlugins:  in.EnabledPlugins,
+			DisabledPlugins: in.DisabledPlugins,
+			Properties:      props,
+			Targets:         targets,
+		},
 	}, nil
 }
 

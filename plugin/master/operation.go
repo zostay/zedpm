@@ -3,6 +3,7 @@ package master
 import (
 	"context"
 
+	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -56,8 +57,12 @@ func (h *OperationHandler) Call(ctx context.Context) error {
 		ctx,
 		NewSliceIterator[*operationInfo](h.opInfo),
 		func(ctx context.Context, _ int, info *operationInfo) error {
-			ctx, pctx := h.ti.ctxFor(ctx, h.taskName, info.pluginName)
-			err := info.op.Action.Call(ctx)
+			ctx, pctx, err := h.ti.ctxFor(ctx, h.taskName, info.pluginName)
+			if err != nil {
+				return format.WrapErr(err, "unable to setup plugin context", err)
+			}
+
+			err = info.op.Action.Call(ctx)
 			if err != nil {
 				return err
 			}
