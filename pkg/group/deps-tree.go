@@ -122,6 +122,10 @@ func (d *DepsGraph) PhaseOrder() ([]string, error) {
 	foundNodes := make([]string, 0, len(d.nodes))
 	for len(workNodes) > 0 {
 		for from := range workNodes {
+			if _, hasAnyEdges := workEdges[from]; hasAnyEdges {
+				continue
+			}
+
 			foundNodes = append(foundNodes, from)
 		}
 

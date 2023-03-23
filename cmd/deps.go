@@ -23,7 +23,7 @@ func RunDepsForGoal(
 	return func(cmd *cobra.Command, args []string) error {
 		goal := phases[0].Goal
 		for i, phase := range goal.ExecutionPhases() {
-			fmt.Printf("Phase #%d:\n", i)
+			fmt.Printf("Phase #%d - %s:\n", i, phase.Name)
 			for _, task := range phase.InterleavedTasks {
 				fmt.Printf(" - %s\n", task.Name)
 			}
