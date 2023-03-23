@@ -89,7 +89,12 @@ func SetupGroups(
 
 	goals := make([]*Goal, 0, len(goalMap))
 	for _, goal := range goalMap {
-
+		graph := NewDepsGraph(goal)
+		order, err := graph.PhaseOrder()
+		if err != nil {
+			return nil, fmt.Errorf("unable to order phases for goal %q: %w", goal.Name, err)
+		}
+		goal.PhaseOrder = order
 		goals = append(goals, goal)
 	}
 

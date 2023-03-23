@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -23,17 +22,10 @@ func RunDepsForGoal(
 ) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		goal := phases[0].Goal
-		graph := group.NewDepsGraph(goal)
-		descs, err := graph.PhaseOrder()
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "failed to get the dependency order: %v", err)
-			os.Exit(1)
-		}
-
-		for i, grp := range descs {
+		for i, phase := range goal.ExecutionPhases() {
 			fmt.Printf("Phase #%d:\n", i)
-			for _, desc := range grp {
-				fmt.Printf(" - %s\n", desc)
+			for _, task := range phase.InterleavedTasks {
+				fmt.Printf(" - %s\n", task.Name)
 			}
 		}
 

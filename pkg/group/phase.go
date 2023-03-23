@@ -44,7 +44,7 @@ func (p *Phase) Short() string {
 // Tasks returns the plugin.TaskDescription for all the tasks that will be
 // executed during this Phase.
 func (p *Phase) Tasks() []plugin.TaskDescription {
-	tasks := make([]plugin.TaskDescription, len(p.InterleavedTasks))
+	tasks := make([]plugin.TaskDescription, 0, len(p.InterleavedTasks))
 	for _, t := range p.InterleavedTasks {
 		tasks = append(tasks, t.Task)
 	}
