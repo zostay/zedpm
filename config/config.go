@@ -93,7 +93,7 @@ type ActionConfig struct {
 type GoalConfig struct {
 	ActionConfig
 
-	// Tasks provides configuration of sub-tasks of this goal.
+	// InterleavedTasks provides configuration of sub-tasks of this goal.
 	Phases []PhaseConfig
 }
 
@@ -165,7 +165,9 @@ func Load(filename string, in io.Reader) (*Config, error) {
 	return decodeRawConfig(&raw)
 }
 
-var legalName = regexp.MustCompile(`[_\PL][_\PL\PN]*(?:-[_\PL][_\PL\PN]*)*`)
+const word = `[_\pL][_\pL\pN]*`
+
+var legalName = regexp.MustCompile(word + `(?:-` + word + `)*`)
 
 // GoalPhaseAndTaskName splits a string of the form /goal/phase/task and returns
 // it returns strings "goal", "phase", and "task". Returns an error if the

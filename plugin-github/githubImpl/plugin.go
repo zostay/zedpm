@@ -18,9 +18,8 @@ type Plugin struct{}
 func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
 	rel := goals.DescribeRelease()
 	return []plugin.TaskDescription{
-		rel.Task("mint/github", "Create a Github pull request."),
-		rel.Task("publish/github", "Publish a release.",
-			rel.TaskName("mint")),
+		rel.Task("mint", "github", "Create a Github pull request."),
+		rel.Task("publish", "github", "Publish a release.", "mint"),
 	}, nil
 }
 

@@ -1,55 +1,63 @@
 package cmd
 
 import (
-	"context"
-	"path"
 	"strings"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 
-	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/pkg/group"
 	"github.com/zostay/zedpm/plugin/master"
-	"github.com/zostay/zedpm/plugin/metal"
 )
 
-type CmdBuilder func(*master.InterfaceExecutor, *master.TaskGroup) func(*cobra.Command, []string) error
+type CmdBuilder func(*master.InterfaceExecutor, []*group.Phase) func(*cobra.Command, []string) error
 
-// configureTasks sets up the master plugin interface and plugin executor. Then,
-// it contacts each plugin to see what it implements and uses that information
-// to configure the available run subcommands on the command-line.
-func configureTasks(
-	logger hclog.Logger,
-	cfg *config.Config,
-	plugins metal.Clients,
+// configureGoals goes through all goals for all available plugins and
+// configures the given runner for the given command as sub-commands named for
+// each "goal".
+func configureGoals(
+	goals []*group.Goal,
+	e *master.InterfaceExecutor,
 	attachCmd *cobra.Command,
 	runner CmdBuilder,
 ) error {
-	ifaces, err := metal.DispenseAll(plugins)
-	if err != nil {
-		return err
+	for _, goal := range goals {
+		goalCmd := configureGoalCommand(goal, e, runner)
+		attachCmd.AddCommand(goalCmd)
 	}
 
-	m := master.NewInterface(logger, cfg, ifaces)
-	e := master.NewExecutor(logger, m)
+	return nil
+}
 
-	ctx := context.Background()
-	groups, err := e.TaskGroups(ctx)
-	if err != nil {
-		return err
-	}
+// configureGoalsPhasesAndTasks goes through all goals, phases, and tasks for
+// all available plugins and configures the given runner for the given command
+// as sub-commands named for each "goal", each "goal phase", and each "goal
+// phase task".
+func configureGoalsPhasesAndTasks(
+	goals []*group.Goal,
+	e *master.InterfaceExecutor,
+	attachCmd *cobra.Command,
+	runner CmdBuilder,
+) error {
+	for _, goal := range goals {
+		goalCmd := configureGoalCommand(goal, e, runner)
+		attachCmd.AddCommand(goalCmd)
 
-	cmds := make(map[string]*cobra.Command, len(groups))
-	for _, group := range groups {
-		cmd := configureGoalCommand(group, e, runner)
-		attachCmd.AddCommand(cmd)
-		cmds[group.Tree] = cmd
+		for _, phase := range goal.Phases {
+			if strings.HasPrefix(phase.Name, "_") {
+				continue
+			}
 
-		for _, sub := range group.SubTasks() {
-			cmd := configureTaskCommand(sub, e, runner)
-			parent := path.Dir(sub.Tree)
-			cmds[parent].AddCommand(cmd)
-			cmds[sub.Tree] = cmd
+			phaseCmd := configurePhaseCommand(phase, e, runner)
+			goalCmd.AddCommand(phaseCmd)
+
+			for _, task := range phase.InterleavedTasks {
+				if strings.HasPrefix(task.Name, "_") {
+					continue
+				}
+
+				taskCmd := configureTaskCommand(task, e, runner)
+				phaseCmd.AddCommand(taskCmd)
+			}
 		}
 	}
 
@@ -59,33 +67,44 @@ func configureTasks(
 // configureTaskCommand builds and returns the configuration for a single
 // subcommand for a given subtask.
 func configureTaskCommand(
-	group *master.TaskGroup,
+	task *group.Task,
 	e *master.InterfaceExecutor,
 	runner CmdBuilder,
 ) *cobra.Command {
-	shorts := make([]string, len(group.Tasks))
-	for i, task := range group.Tasks {
-		shorts[i] = task.Short()
-	}
-
 	return &cobra.Command{
-		Use:   path.Base(group.Tree),
-		Short: strings.Join(shorts, " "),
-		RunE:  runner(e, group),
+		Use:   task.Name,
+		Short: task.Short(),
+		RunE: runner(e, []*group.Phase{
+			{InterleavedTasks: []*group.Task{task}},
+		}),
+	}
+}
+
+// configurePhaseCommand builds andr eturns teh configruation for a single
+// subcommand for a given phase.
+func configurePhaseCommand(
+	phase *group.Phase,
+	e *master.InterfaceExecutor,
+	runner CmdBuilder,
+) *cobra.Command {
+	return &cobra.Command{
+		Use:   phase.Name,
+		Short: phase.Short(),
+		RunE:  runner(e, []*group.Phase{phase}),
 	}
 }
 
 // configureGoalCommand builds and returns the configuration for a single
 // subcommand for a given goal.
 func configureGoalCommand(
-	group *master.TaskGroup,
+	goal *group.Goal,
 	e *master.InterfaceExecutor,
 	runner CmdBuilder,
 ) *cobra.Command {
 	return &cobra.Command{
-		Use:     group.Goal.Name(),
-		Short:   group.Goal.Short(),
-		Aliases: group.Goal.Aliases(),
-		RunE:    runner(e, group),
+		Use:     goal.Name,
+		Short:   goal.Short(),
+		Aliases: goal.Aliases(),
+		RunE:    runner(e, goal.ExecutionPhases()),
 	}
 }

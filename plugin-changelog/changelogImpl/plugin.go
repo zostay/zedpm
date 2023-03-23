@@ -30,11 +30,10 @@ func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
 	lint := goals.DescribeLint()
 	release := goals.DescribeRelease()
 	return []plugin.TaskDescription{
-		info.Task("release/description", "Explain the changes made for a release."),
-		lint.Task("changelog", "Check changelog for correctness."),
-		release.Task("mint/changelog", "Check and prepare changelog for release."),
-		release.Task("publish/changelog", "Capture changelog data to prepare for release.",
-			release.TaskName("mint")),
+		info.Task("release", "description", "Explain the changes made for a release."),
+		lint.Task("project-files", "changelog", "Check changelog for correctness."),
+		release.Task("mint", "changelog", "Check and prepare changelog for release."),
+		release.Task("publish", "changelog", "Capture changelog data to prepare for release.", "mint"),
 	}, nil
 }
 
@@ -44,7 +43,7 @@ func (p *Plugin) Prepare(
 	task string,
 ) (plugin.Task, error) {
 	switch task {
-	case "/lint/changelog":
+	case "/lint/project-files/changelog":
 		return &LintChangelogTask{}, nil
 	case "/info/release/description":
 		return &InfoChangelogTask{}, nil

@@ -7,7 +7,9 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/format"
+	"github.com/zostay/zedpm/pkg/group"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -239,42 +241,37 @@ func (e *InterfaceExecutor) complete(
 	return err
 }
 
-// ExecuteAllStages sorts all the stages for execution of a task into groups.
-// These groups may represent implementations of multiple tasks to achieve a
-// goal or a sub-task of a goal. These are each executed concurrently in order
-// from most required to least required to complete the goal or subtask in its
-// entirety.
-//
-// Lots of error checking is performed. If anything goes wrong, this operation
-// will fail with an error.
-func (e *InterfaceExecutor) ExecuteAllStages(
+// ExecuteGoal executes all the tasks in a goal. Tasks are grouped into phases.
+// Each phase is run one at a time in order. These may be executed concurrently.
+// The tasks within each phase are run simultaneously and interleaved (with
+// individual operations sometimes running concurrently).
+func (e *InterfaceExecutor) ExecuteGoal(
 	ctx context.Context,
-	group *TaskGroup,
+	goal *group.Goal,
 ) error {
-	stages, err := group.ExecutionGroups()
-	if err != nil {
-		return format.WrapErr(err, "failed to break down goal %q into stages", group.Goal.Name())
-	}
+	phases := goal.ExecutionPhases()
 
-	for _, stage := range stages {
-		err := e.ExecuteStage(ctx, stage)
-		if err != nil {
-			stageNames := make([]string, len(stage))
-			for i, task := range stage {
-				stageNames[i] = task.Name()
-			}
-			return format.WrapErr(err, "failed to execute stage (%s)", format.And(stageNames...))
-		}
+	for _, phase := range phases {
+		err := e.ExecutePhase(ctx, phase)
+		return err
 	}
 
 	return nil
 }
 
-// ExecuteStage will execute a set of tasks concurrently. Any errors that occur
-// executing this stage will be returned as an Error.
-func (e *InterfaceExecutor) ExecuteStage(
+// ExecutePhase executes all the tasks in a phase. Tasks in a phase are executed
+// simultaneously with operations interleaved and run concurrently according to
+// operation order.
+//
+// First, every task is concurrently setup, then checked. Then the operation of
+// the begin phase are run in priority order, with any operations having the
+// same priority being run concurrently. Then the operations of the run phase
+// run, again in priority order. And then the operations of the end phase are
+// run in priority order. Finally, the tasks are finished and torn down
+// concurrently.
+func (e *InterfaceExecutor) ExecutePhase(
 	ctx context.Context,
-	stage []plugin.TaskDescription,
+	phase *group.Phase,
 ) error {
 	stdOps := []struct {
 		name     string
@@ -291,19 +288,28 @@ func (e *InterfaceExecutor) ExecuteStage(
 	}
 
 	for _, stdOp := range stdOps {
-		err := RunTasksAndAccumulateErrors[int, plugin.TaskDescription](ctx,
-			NewSliceIterator[plugin.TaskDescription](stage),
-			func(ctx context.Context, _ int, task plugin.TaskDescription) error {
-				return e.Execute(ctx, task.Name(), stdOp.name, stdOp.function)
-			},
-		)
-
+		err := e.ExecutePhaseStage(ctx, phase, stdOp.name, stdOp.function)
 		if err != nil {
-			return err
+			return format.WrapErr(err, "failed to execute stage (%s)", stdOp.name)
 		}
 	}
 
 	return nil
+}
+
+// ExecutePhaseStage executes an individual stage for a phase.
+func (e *InterfaceExecutor) ExecutePhaseStage(
+	ctx context.Context,
+	phase *group.Phase,
+	name string,
+	op func(context.Context, string, plugin.Task) error,
+) error {
+	return RunTasksAndAccumulateErrors[int, plugin.TaskDescription](ctx,
+		NewSliceIterator[plugin.TaskDescription](phase.Tasks()),
+		func(ctx context.Context, _ int, task plugin.TaskDescription) error {
+			return e.Execute(ctx, task.Name(), name, op)
+		},
+	)
 }
 
 // Execute will execute a single task and return an error if execution fails.
@@ -326,26 +332,25 @@ func (e *InterfaceExecutor) Execute(
 	return nil
 }
 
-// TaskGroups builds an returns a slice of TaskGroup objects that will be
+// PotentialGoalsPhasesAndTasks builds an returns a slice of TaskGroup objects that will be
 // executed as part of this InterfaceExecutor.
-func (e *InterfaceExecutor) TaskGroups(
+func (e *InterfaceExecutor) PotentialGoalsPhasesAndTasks(
 	ctx context.Context,
-) ([]*TaskGroup, error) {
+) ([]*group.Goal, error) {
 	tasks, err := e.m.Implements(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	taskGroupMap := make(map[string]*TaskGroup, len(tasks))
+	goalMap := make(map[string]plugin.GoalDescription, len(tasks))
 
 	for _, task := range tasks {
-		goalName, err := plugin.GoalName(task)
+		goalName, _, _, err := config.GoalPhaseAndTaskName(task.Name())
 		if err != nil {
 			return nil, err
 		}
 
-		if group, groupExists := taskGroupMap[goalName]; groupExists {
-			group.Tasks = append(group.Tasks, task)
+		if goal := goalMap[goalName]; goal != nil {
 			continue
 		}
 
@@ -354,27 +359,8 @@ func (e *InterfaceExecutor) TaskGroups(
 			return nil, err
 		}
 
-		taskGroupMap[goalName] = &TaskGroup{
-			Tree:  "/" + goal.Name(),
-			Goal:  goal,
-			Tasks: []plugin.TaskDescription{task},
-		}
+		goalMap[goalName] = goal
 	}
 
-	out := make([]*TaskGroup, 0, len(tasks))
-	for _, group := range taskGroupMap {
-		out = append(out, group)
-	}
-
-	for _, group := range out {
-		sort.Slice(group.Tasks, func(i, j int) bool {
-			return group.Tasks[i].Name() < group.Tasks[j].Name()
-		})
-	}
-
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].Goal.Name() < out[j].Goal.Name()
-	})
-
-	return out, nil
+	return group.SetupGroups(tasks, goalMap)
 }

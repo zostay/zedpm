@@ -23,17 +23,17 @@ func NewGoalDescription(name, short string, aliases ...string) *GoalDescription 
 }
 
 // Task creates a TaskDescription as a sub-task of this goal.
-func (g *GoalDescription) Task(name, short string, requires ...string) *TaskDescription {
+func (g *GoalDescription) Task(phaseName, taskName, short string, requires ...string) *TaskDescription {
 	return &TaskDescription{
-		name:     g.TaskName(name),
+		name:     g.TaskName(phaseName, taskName),
 		short:    short,
 		requires: requires,
 	}
 }
 
 // TaskName returns the goal as a task path.
-func (g *GoalDescription) TaskName(name string) string {
-	return path.Join("/"+g.name, name)
+func (g *GoalDescription) TaskName(phaseName, taskName string) string {
+	return path.Join("/"+g.name, phaseName, taskName)
 }
 
 // Name returns the name of the goal.

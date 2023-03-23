@@ -19,7 +19,7 @@ type Plugin struct{}
 func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
 	info := goals.DescribeInfo()
 	return []plugin.TaskDescription{
-		info.Task("display", "Display information."),
+		info.Task("_finally", "display", "Display information."),
 	}, nil
 }
 
@@ -61,7 +61,7 @@ func (p *Plugin) Prepare(
 	taskName string,
 ) (plugin.Task, error) {
 	switch taskName {
-	case "/info/display":
+	case "/info/_finally/display":
 		return &InfoDisplayTask{}, nil
 	}
 	return nil, plugin.ErrUnsupportedTask

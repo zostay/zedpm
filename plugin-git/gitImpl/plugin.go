@@ -18,9 +18,8 @@ type Plugin struct{}
 func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
 	release := goals.DescribeRelease()
 	return []plugin.TaskDescription{
-		release.Task("mint/git", "Verify work directory is clean and push a release branch."),
-		release.Task("publish/git", "Push a release tag.",
-			release.TaskName("mint")),
+		release.Task("mint", "git", "Verify work directory is clean and push a release branch."),
+		release.Task("publish", "git", "Push a release tag.", "mint"),
 	}, nil
 }
 

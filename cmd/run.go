@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/zostay/zedpm/pkg/group"
 	"github.com/zostay/zedpm/plugin/master"
 )
 
@@ -26,7 +27,7 @@ func init() {
 // goal or subtask.
 func RunGoal(
 	e *master.InterfaceExecutor,
-	group *master.TaskGroup,
+	phases []*group.Phase,
 ) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
@@ -37,10 +38,12 @@ func RunGoal(
 		values, _ := cmd.Flags().GetStringToString("define")
 		e.Define(values)
 
-		err := e.ExecuteAllStages(ctx, group)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "failed to execute tasks (%s): %v\n", group.TaskNames(), err)
-			os.Exit(1)
+		for _, phase := range phases {
+			err := e.ExecutePhase(ctx, phase)
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "failed to execute phase %q: %v\n", phase.Name, err)
+				os.Exit(1)
+			}
 		}
 
 		return nil

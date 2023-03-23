@@ -3,10 +3,6 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	"github.com/zostay/zedpm/config"
-	"github.com/zostay/zedpm/format"
 )
 
 var (
@@ -69,39 +65,6 @@ type TaskDescription interface {
 	// task will not be executed until after both /release/wait and
 	// /release/mint have been executed.
 	Requires() []string
-}
-
-// GoalName validates the correctness of the TaskDescription.Name of the task
-// and then returns just the goal name from that task path.
-func GoalName(task TaskDescription) (string, error) {
-	taskPath := task.Name()
-	err := validateTaskPath(taskPath)
-	if err != nil {
-		return "", err
-	}
-
-	goal, _, _, err := config.GoalPhaseAndTaskName(taskPath)
-	if err != nil {
-		return "", err
-	}
-
-	return goal, nil
-}
-
-// validateTaskPath is an internal function that validates the given task path.
-func validateTaskPath(name string) error {
-	if name[0] != '/' {
-		return format.WrapErr(ErrBadTaskName, name)
-	}
-
-	name = name[1:]
-
-	idx := strings.IndexRune(name, '/')
-	if idx < 0 {
-		return format.WrapErr(ErrBadTaskName, name)
-	}
-
-	return nil
 }
 
 // Interface is the base interface that all plugins implement.

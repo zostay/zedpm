@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/plugin/master"
 	"github.com/zostay/zedpm/plugin/metal"
 )
 
@@ -47,12 +49,26 @@ func Execute() {
 	}
 	defer metal.KillPlugins(plugins)
 
-	err = configureTasks(logger, cfg, plugins, runCmd, RunGoal)
+	ifaces, err := metal.DispenseAll(plugins)
+	if err != nil {
+		panic(fmt.Sprintf("zedpm failed to dispense plugins: %v", err))
+	}
+
+	m := master.NewInterface(logger, cfg, ifaces)
+	e := master.NewExecutor(logger, m)
+
+	ctx := context.Background()
+	goals, err := e.PotentialGoalsPhasesAndTasks(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("zedpm failed to discover plugin goals: %v", err))
+	}
+
+	err = configureGoalsPhasesAndTasks(goals, e, runCmd, RunGoal)
 	if err != nil {
 		panic(fmt.Sprintf("zedpm failed to configure run goals: %v\n", err))
 	}
 
-	err = configureTasks(logger, cfg, plugins, depsCmd, RunDepsForGoal)
+	err = configureGoals(goals, e, depsCmd, RunDepsForGoal)
 	if err != nil {
 		panic(fmt.Sprintf("zedpm failed to configure deps goals: %v\n", err))
 	}
