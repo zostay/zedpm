@@ -35,7 +35,7 @@ func ExtractSection(fn string, vstring string) (io.Reader, error) {
 
 	for sc.Scan() {
 		line := sc.Text()
-		if strings.HasPrefix(line, vprefix) {
+		if !started && strings.HasPrefix(line, vprefix) {
 			started = true
 			continue
 		}

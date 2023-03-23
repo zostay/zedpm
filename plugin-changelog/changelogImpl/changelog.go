@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	PropertyChangelogFile = "changlog.file"
+	PropertyChangelogFile = "changelog.file"
 )
 
 // DefaultChangelog is the changelog file path to use when none is configured.
