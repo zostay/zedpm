@@ -2,8 +2,6 @@ package master
 
 import (
 	"context"
-	"fmt"
-	"sort"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -98,118 +96,6 @@ func (e *InterfaceExecutor) prepare(
 	return task, nil
 }
 
-// taskOperation executes one of the operation-style task stages (i.e., Setup,
-// Check, Finish, Teardown).
-func (e *InterfaceExecutor) taskOperation(
-	ctx context.Context,
-	taskName string,
-	stage string,
-	task plugin.Task,
-	op func(context.Context) error,
-) error {
-	err := op(ctx)
-	if err != nil {
-		e.tryCancel(ctx, taskName, task, stage)
-		e.logFail(ctx, taskName, stage, err)
-		return err
-	}
-	return nil
-}
-
-// setup executes the setup stage of the plugin.Task.
-func (e *InterfaceExecutor) setup(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskOperation(ctx, taskName, "Setup", task, task.Setup)
-}
-
-// check executes the check stage of the plugin.Task.
-func (e *InterfaceExecutor) check(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskOperation(ctx, taskName, "Check", task, task.Check)
-}
-
-// taskPriorityOperation prepares to run the set of plugin.Operations function
-// returned by a prioritized stage (i.e., Begin, Run, and End). And then it runs
-// the operations returned by that plugin.Task stage method.
-func (e *InterfaceExecutor) taskPriorityOperation(
-	ctx context.Context,
-	taskName string,
-	stage string,
-	task plugin.Task,
-	prepare func(context.Context) (plugin.Operations, error),
-) error {
-	ops, err := prepare(ctx)
-	if err != nil {
-		e.tryCancel(ctx, taskName, task, stage)
-		e.logFail(ctx, taskName, stage, err)
-		return err
-	}
-
-	sort.Slice(ops, plugin.OperationLess(ops))
-	for _, op := range ops {
-		err := op.Action.Call(ctx)
-		if err != nil {
-			priStage := fmt.Sprintf("%s:%02d", stage, op.Order)
-			e.tryCancel(ctx, taskName, task, priStage)
-			e.logFail(ctx, taskName, priStage, err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-// begin executes the operations for the Begin phase in priority order.
-func (e *InterfaceExecutor) begin(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskPriorityOperation(ctx, taskName, "Begin", task, task.Begin)
-}
-
-// run executes the operations for the Run phase in priority order.
-func (e *InterfaceExecutor) run(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskPriorityOperation(ctx, taskName, "Run", task, task.Run)
-}
-
-// end executes the operations in the End phase in priority order.
-func (e *InterfaceExecutor) end(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskPriorityOperation(ctx, taskName, "End", task, task.End)
-}
-
-// finish executes the Finish stage of plugin.Task.
-func (e *InterfaceExecutor) finish(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskOperation(ctx, taskName, "Finish", task, task.Finish)
-}
-
-// teardown executes the Teardown stage of plugin.Teardown.
-func (e *InterfaceExecutor) teardown(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	return e.taskOperation(ctx, taskName, "Teardown", task, task.Teardown)
-}
-
 // finalTaskNameKey is the key used with withFinalTaskName and finalTaskName.
 type finalTaskNameKey struct{}
 
@@ -223,22 +109,6 @@ func withFinalTaskName(ctx context.Context, taskName string) context.Context {
 // finalTaskName returns the previous stored task name.
 func finalTaskName(ctx context.Context) string {
 	return ctx.Value(finalTaskNameKey{}).(string)
-}
-
-// complete executes the plugin.Interface.Complete method.
-func (e *InterfaceExecutor) complete(
-	ctx context.Context,
-	taskName string,
-	task plugin.Task,
-) error {
-	err := e.m.Complete(withFinalTaskName(ctx, taskName), task)
-	if err != nil {
-		e.logger.Error("failed while completing task due to error",
-			"stage", "Complete",
-			"task", taskName,
-			"error", format.Err(err))
-	}
-	return err
 }
 
 // ExecuteGoal executes all the tasks in a goal. Tasks are grouped into phases.
@@ -273,60 +143,25 @@ func (e *InterfaceExecutor) ExecutePhase(
 	ctx context.Context,
 	phase *group.Phase,
 ) error {
-	stdOps := []struct {
-		name     string
-		function func(context.Context, string, plugin.Task) error
-	}{
-		{"setup", e.setup},
-		{"check", e.check},
-		{"begin", e.begin},
-		{"run", e.run},
-		{"end", e.end},
-		{"finish", e.finish},
-		{"teardown", e.teardown},
-		{"complete", e.complete},
+	ops := []OperationExecutor{
+		&SimpleExecutor{"setup", e, phase.Tasks(), plugin.Task.Setup},
+		&SimpleExecutor{"check", e, phase.Tasks(), plugin.Task.Check},
+
+		&StagedExecutor{"begin", e, phase.Tasks(), plugin.Task.Begin},
+		&StagedExecutor{"run", e, phase.Tasks(), plugin.Task.Run},
+		&StagedExecutor{"end", e, phase.Tasks(), plugin.Task.End},
+
+		&SimpleExecutor{"finish", e, phase.Tasks(), plugin.Task.Finish},
+		&SimpleExecutor{"teardown", e, phase.Tasks(), plugin.Task.Teardown},
+
+		&CompletionExecutor{e, phase.Tasks()},
 	}
 
-	for _, stdOp := range stdOps {
-		err := e.ExecutePhaseStage(ctx, phase, stdOp.name, stdOp.function)
+	for _, op := range ops {
+		err := op.Execute(ctx)
 		if err != nil {
-			return format.WrapErr(err, "failed to execute stage (%s)", stdOp.name)
+			return err
 		}
-	}
-
-	return nil
-}
-
-// ExecutePhaseStage executes an individual stage for a phase.
-func (e *InterfaceExecutor) ExecutePhaseStage(
-	ctx context.Context,
-	phase *group.Phase,
-	name string,
-	op func(context.Context, string, plugin.Task) error,
-) error {
-	return RunTasksAndAccumulateErrors[int, plugin.TaskDescription](ctx,
-		NewSliceIterator[plugin.TaskDescription](phase.Tasks()),
-		func(ctx context.Context, _ int, task plugin.TaskDescription) error {
-			return e.Execute(ctx, task.Name(), name, op)
-		},
-	)
-}
-
-// Execute will execute a single task and return an error if execution fails.
-func (e *InterfaceExecutor) Execute(
-	ctx context.Context,
-	taskName string,
-	stageName string,
-	op func(context.Context, string, plugin.Task) error,
-) error {
-	task, err := e.prepare(ctx, taskName)
-	if err != nil {
-		return format.WrapErr(err, "failed to prepare task %q", taskName)
-	}
-
-	err = op(ctx, taskName, task)
-	if err != nil {
-		return format.WrapErr(err, "failed to execute operation %s", stageName)
 	}
 
 	return nil

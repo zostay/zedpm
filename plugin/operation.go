@@ -1,11 +1,18 @@
 package plugin
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Ordering is a scheme for prioritizing operations. An Ordering must be in the
 // range of 0-100, inclusive. Lower Ordering values precede larger ones when it
 // comes to determining the order of operations.
 type Ordering int
+
+func (o Ordering) String() string {
+	return fmt.Sprintf("%02d", o)
+}
 
 // OperationFunc is an implementation of OperationHandler defined as a function.
 type OperationFunc func(ctx context.Context) error

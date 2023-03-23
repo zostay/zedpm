@@ -223,8 +223,8 @@ func (t *Task) gatherOperations(
 		order := info.op.Order
 		if order < 0 {
 			order = 0
-		} else if order > 100 {
-			order = 100
+		} else if order >= 100 {
+			order = 99
 		}
 
 		if order > lastOrder {
