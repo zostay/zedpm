@@ -90,19 +90,45 @@ func (f *ReleasePublishTask) Check(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var err error
-	for {
-		if ctx.Err() != nil {
-			break
-		}
-
-		err = f.CheckReadyForMerge(ctx)
-		if err != nil {
-			<-time.After(30 * time.Second)
+	// Restart the check every few seconds, but not if it's still running for
+	// some reason.
+	var waiting, running bool
+	errCh := make(chan error)
+	startReadinessCheck := func() {
+		if !waiting && !running {
+			running, waiting = true, true
+			go func() {
+				errCh <- f.CheckReadyForMerge(ctx)
+			}()
 		}
 	}
 
-	return err
+	startReadinessCheck()
+
+	var lastErr error
+	for {
+		select {
+		case <-ctx.Done():
+			if lastErr != nil {
+				return lastErr
+			}
+			return ctx.Err()
+
+		case <-time.After(30 * time.Second):
+			// TODO Make the retry delay here configurable by property
+			waiting = false
+			startReadinessCheck()
+			// TODO If running == true for too many of these delays, maybe we want to cancel early?
+			continue
+
+		case lastErr = <-errCh:
+			running = false
+			startReadinessCheck()
+			if lastErr == nil {
+				return nil
+			}
+		}
+	}
 }
 
 // MergePullRequest merges the PR into master.
