@@ -151,15 +151,19 @@ func (s *ReleaseMintTask) Run(context.Context) (plugin.Operations, error) {
 // AddAndCommit adds changes made as part of the release process to the release
 // branch.
 func (s *ReleaseMintTask) AddAndCommit(ctx context.Context) error {
+	logger := plugin.Logger(ctx)
 	addedFiles := plugin.ListAdded(ctx)
 	for _, fn := range addedFiles {
 		_, err := s.Worktree().Add(fn)
 		if err != nil {
 			return format.WrapErr(err, "error adding file %s to git", fn)
 		}
+
+		logger.Info("Adding file to git", "filename", fn)
 	}
 
 	version := plugin.GetString(ctx, "release.version")
+	msg := "releng: v" + version
 	_, err := s.Worktree().Commit("releng: v"+version, &git.CommitOptions{})
 	if err != nil {
 		return format.WrapErr(err, "error committing changes to git")
@@ -168,7 +172,8 @@ func (s *ReleaseMintTask) AddAndCommit(ctx context.Context) error {
 	plugin.Logger(ctx,
 		"count", len(addedFiles),
 		"version", version,
-	).Info("Adding and committing changed files to git")
+		"message", msg,
+	).Info("Added files and committing changes to git")
 
 	return nil
 }
