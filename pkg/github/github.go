@@ -78,7 +78,7 @@ func (g *Github) OwnerProject(ctx context.Context) (string, string, error) {
 
 		urlPath := url[len(prefix):]
 		if strings.HasSuffix(urlPath, ".git") {
-			urlPath = urlPath[:len(urlPath)-len(".git")-1]
+			urlPath = urlPath[:len(urlPath)-len(".git")]
 		}
 
 		parts := strings.Split(urlPath, "/")

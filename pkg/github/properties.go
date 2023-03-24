@@ -11,7 +11,7 @@ import (
 const (
 	PropertyGithubReleaseName = "github.release.name"
 	PropertyGithubOwner       = "github.owner"
-	PropertyGithubProject     = "github.projecct"
+	PropertyGithubProject     = "github.project"
 )
 
 const defaultReleaseNamePrefix = "Release v"
