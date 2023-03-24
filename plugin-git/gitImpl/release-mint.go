@@ -133,7 +133,7 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 		"headRef", headRef,
 		"branchRefName", branchRefName,
 		"branch", branch,
-	).Info("Created git branch %q for managing the release.", branch)
+	).Info("Created git branch for managing the release")
 
 	return nil
 }
@@ -166,8 +166,9 @@ func (s *ReleaseMintTask) AddAndCommit(ctx context.Context) error {
 	}
 
 	plugin.Logger(ctx,
+		"count", len(addedFiles),
 		"version", version,
-	).Info("Adding and committing %d changed files to git.", len(addedFiles))
+	).Info("Adding and committing changed files to git")
 
 	return nil
 }
