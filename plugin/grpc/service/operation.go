@@ -37,8 +37,9 @@ func (s *TaskExecution) executePrioritizedStage(
 		if op.Order == plugin.Ordering(request.SubStage) {
 			res, err = s.executeStage(ctx,
 				&api.Task_Operation_Request{
-					Task:    opRequest.GetTask(),
-					Storage: opRequest.GetStorage(),
+					Task:       opRequest.GetTask(),
+					Storage:    opRequest.GetStorage(),
+					AddedFiles: opRequest.GetAddedFiles(),
 				},
 				func(_ plugin.Task, ctx context.Context) error {
 					return op.Action.Call(ctx)

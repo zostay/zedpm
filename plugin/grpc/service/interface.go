@@ -157,22 +157,29 @@ func (s *TaskExecution) deref(ref *api.Task_Ref) (*TaskState, error) {
 	return task, nil
 }
 
+type TaskRequest interface {
+	GetTask() *api.Task_Ref
+	GetStorage() map[string]string
+	GetAddedFiles() []string
+}
+
 // closeTask performs final operations on a task, performs cleanup, and deletes
 // the task reference from the internal state cache.
 func (s *TaskExecution) closeTask(
 	ctx context.Context,
-	taskRef *api.Task_Ref,
-	storage map[string]string,
+	request TaskRequest,
 	completed bool,
 ) error {
+	taskRef := request.GetTask()
 	_, err := s.deref(taskRef)
 	if err != nil {
 		return err
 	}
 
 	_, err = s.executeStage(ctx, &api.Task_Operation_Request{
-		Task:    taskRef,
-		Storage: storage,
+		Task:       taskRef,
+		Storage:    request.GetStorage(),
+		AddedFiles: request.GetAddedFiles(),
 	}, plugin.Task.Teardown)
 
 	state, derefErr := s.deref(taskRef)
@@ -182,6 +189,7 @@ func (s *TaskExecution) closeTask(
 		panic("fatal error during plugin cancellation")
 	}
 
+	// TODO Why are we initializing context here? Wouldn't that already be done above?
 	ctx = plugin.InitializeContext(ctx, state.Context)
 
 	if err != nil { //nolint:gocritic // prefer this as an if-else
@@ -212,7 +220,7 @@ func (s *TaskExecution) Cancel(
 	ctx context.Context,
 	request *api.Task_Cancel_Request,
 ) (*api.Task_Cancel_Response, error) {
-	err := s.closeTask(ctx, request.GetTask(), request.GetStorage(), false)
+	err := s.closeTask(ctx, request, false)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +233,7 @@ func (s *TaskExecution) Complete(
 	ctx context.Context,
 	request *api.Task_Complete_Request,
 ) (*api.Task_Complete_Response, error) {
-	err := s.closeTask(ctx, request.GetTask(), request.GetStorage(), true)
+	err := s.closeTask(ctx, request, true)
 	if err != nil {
 		return nil, err
 	}

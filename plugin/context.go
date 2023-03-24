@@ -113,6 +113,13 @@ func (p *Context) StorageChanges() map[string]string {
 	return changes
 }
 
+// SetAdded replaces the added files with a new list.
+func (p *Context) SetAdded(addedFiles []string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.addFiles = addedFiles
+}
+
 // ListAdded returns the list of files added to the plugin context.
 func (p *Context) ListAdded() []string {
 	p.lock.Lock()

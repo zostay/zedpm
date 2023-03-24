@@ -23,8 +23,9 @@ type Operation struct {
 func (o *Operation) Call(ctx context.Context) error {
 	res, err := o.call(ctx, &api.Task_SubStage_Request{
 		Request: &api.Task_Operation_Request{
-			Task:    o.parent.ref,
-			Storage: translate.KVToStringMapString(plugin.KV(ctx)),
+			Task:       o.parent.ref,
+			Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
+			AddedFiles: plugin.ListAdded(ctx),
 		},
 		SubStage: o.order,
 	})

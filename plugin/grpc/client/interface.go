@@ -85,8 +85,9 @@ func (c *Interface) Cancel(
 ) error {
 	ref := task.(*Task).ref
 	_, err := c.client.Cancel(ctx, &api.Task_Cancel_Request{
-		Task:    ref,
-		Storage: translate.KVToStringMapString(plugin.KV(ctx)),
+		Task:       ref,
+		Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
+		AddedFiles: plugin.ListAdded(ctx),
 	})
 	return err
 }
@@ -98,8 +99,9 @@ func (c *Interface) Complete(
 ) error {
 	ref := task.(*Task).ref
 	_, err := c.client.Complete(ctx, &api.Task_Complete_Request{
-		Task:    ref,
-		Storage: translate.KVToStringMapString(plugin.KV(ctx)),
+		Task:       ref,
+		Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
+		AddedFiles: plugin.ListAdded(ctx),
 	})
 	return err
 }

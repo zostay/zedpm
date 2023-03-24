@@ -32,8 +32,9 @@ func (t *Task) operation(
 	op func(context.Context, *api.Task_Operation_Request, ...grpc.CallOption) (*api.Task_Operation_Response, error),
 ) error {
 	res, err := op(ctx, &api.Task_Operation_Request{
-		Task:    t.ref,
-		Storage: translate.KVToStringMapString(plugin.KV(ctx)),
+		Task:       t.ref,
+		Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
+		AddedFiles: plugin.ListAdded(ctx),
 	})
 
 	if err != nil {

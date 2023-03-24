@@ -18,6 +18,7 @@ func (s *TaskExecution) executeStage(
 	}
 
 	state.Context.UpdateStorage(request.GetStorage())
+	state.Context.SetAdded(request.GetAddedFiles())
 	ctx = plugin.InitializeContext(ctx, state.Context)
 
 	err = op(state.Task, ctx)
