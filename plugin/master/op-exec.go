@@ -182,7 +182,7 @@ func (s *StagedExecutor) executeOperations(
 					if err != nil {
 						priStage := fmt.Sprintf("%s:%v", s.stageName, opInfo.op.Order)
 						taskName := opInfo.taskName
-						err = fmt.Errorf("failed while executing tsage %s of task %q: %w", priStage, taskName, err)
+						err = fmt.Errorf("failed while executing stage %s of task %q: %w", priStage, taskName, err)
 						s.exec.tryCancel(ctx, taskName, opInfo.task, priStage)
 						s.exec.logFail(taskName, priStage, err)
 						return err
