@@ -164,6 +164,10 @@ message Task {
       // This is the properties to apply to storage for use with the next
       // stage.
       map<string, string> storage_update = 2;
+
+      // This returns a list of files that have been modified that will need
+      // their changes added to version control.
+      repeated string added_files = 3;
     }
   }
 
