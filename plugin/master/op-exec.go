@@ -118,7 +118,7 @@ type opInfo struct {
 func (s *StagedExecutor) prepareTasks(
 	ctx context.Context,
 ) ([]plugin.Task, error) {
-	tasks := make([]plugin.Task, len(s.tasks))
+	tasks := make([]plugin.Task, 0, len(s.tasks))
 	for _, taskDesc := range s.tasks {
 		taskName := taskDesc.Name()
 		task, err := s.exec.prepare(ctx, taskName)
