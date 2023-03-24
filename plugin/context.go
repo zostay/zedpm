@@ -113,6 +113,13 @@ func (p *Context) StorageChanges() map[string]string {
 	return changes
 }
 
+// ListAdded returns the list of files added to the plugin context.
+func (p *Context) ListAdded() []string {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	return p.addFiles
+}
+
 // InitializeContext attaches the plugin.Context to the context.Context.
 func InitializeContext(ctx context.Context, pctx *Context) context.Context {
 	return context.WithValue(ctx, contextKey{}, pctx)
@@ -166,20 +173,18 @@ func ListCleanupTasks(ctx context.Context) []SimpleTask {
 
 // ToAdd names a new file that has been created or added by the tooling, which
 // allows it to be added to VC and other such tools.
-func ToAdd(ctx context.Context, newFile string) {
+func ToAdd(ctx context.Context, newFile ...string) {
 	pctx := contextFrom(ctx)
 	pctx.lock.Lock()
 	defer pctx.lock.Unlock()
-	pctx.addFiles = append(pctx.addFiles, newFile)
+	pctx.addFiles = append(pctx.addFiles, newFile...)
 }
 
 // ListAdded returns all the files that have been created or added by the
 // tooling since the Context was created.
 func ListAdded(ctx context.Context) []string {
 	pctx := contextFrom(ctx)
-	pctx.lock.Lock()
-	defer pctx.lock.Unlock()
-	return pctx.addFiles
+	return pctx.ListAdded()
 }
 
 // AtomicProperties executes the given function inside a write lock on the

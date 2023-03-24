@@ -47,14 +47,12 @@ func (s *TaskExecution) executePrioritizedStage(
 
 			theseChanges := res.GetStorageUpdate()
 			accChanges.UpdateStrings(theseChanges)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
 	return &api.Task_Operation_Response{
 		StorageUpdate: accChanges.AllSettingsStrings(),
+		AddedFiles:    state.Context.ListAdded(),
 	}, nil
 }
 

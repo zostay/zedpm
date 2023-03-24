@@ -27,6 +27,7 @@ func (s *TaskExecution) executeStage(
 
 	return &api.Task_Operation_Response{
 		StorageUpdate: state.Context.StorageChanges(),
+		AddedFiles:    state.Context.ListAdded(),
 	}, nil
 }
 

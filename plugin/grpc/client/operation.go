@@ -34,6 +34,7 @@ func (o *Operation) Call(ctx context.Context) error {
 	}
 
 	plugin.ApplyChanges(ctx, res.GetStorageUpdate())
+	plugin.ToAdd(ctx, res.GetAddedFiles()...)
 
 	return nil
 }
