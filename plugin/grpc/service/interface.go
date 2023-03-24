@@ -193,6 +193,14 @@ func (s *TaskExecution) closeTask(
 		err = s.Impl.Complete(ctx, state.Task)
 	}
 
+	// Run cleanup tasks queued up by the plugin if something goes wrong
+	if !completed {
+		cleanupTasks := plugin.ListCleanupTasks(ctx)
+		for _, cleanupTask := range cleanupTasks {
+			cleanupTask()
+		}
+	}
+
 	delete(s.state[taskRef.GetName()], taskRef.GetStateId())
 
 	return err
