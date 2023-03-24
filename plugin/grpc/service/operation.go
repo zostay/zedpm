@@ -8,18 +8,6 @@ import (
 	"github.com/zostay/zedpm/plugin/api"
 )
 
-func (s *TaskExecution) executeSubStage(
-	ctx context.Context,
-	request *api.Task_Operation_Request,
-	op plugin.OperationFunc,
-) (*api.Task_Operation_Response, error) {
-	return s.executeStage(ctx, request,
-		func(_ plugin.Task, ctx context.Context) error {
-			return op(ctx)
-		},
-	)
-}
-
 func (s *TaskExecution) executePrioritizedStage(
 	ctx context.Context,
 	request *api.Task_SubStage_Request,

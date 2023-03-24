@@ -184,7 +184,7 @@ func (s *TaskExecution) closeTask(
 
 	ctx = plugin.InitializeContext(ctx, state.Context)
 
-	if err != nil {
+	if err != nil { //nolint:gocritic // prefer this as an if-else
 		anotherErr := s.Impl.Cancel(ctx, state.Task)
 		plugin.Logger(ctx).Error("error during plugin cancel: %v", anotherErr)
 	} else if !completed {

@@ -61,7 +61,7 @@ func LocateAndLoadProject() (*Config, error) {
 			return nil, nil
 		}
 
-		curConf = filepath.Dir(curConf)
+		curDir = filepath.Dir(curDir)
 	}
 
 	return nil, nil

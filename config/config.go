@@ -255,9 +255,10 @@ func (c *Config) GetGoalPhaseAndTaskConfig(
 
 	var phase *PhaseConfig
 	if phaseName != "" {
-		for _, phaseConfig := range goal.Phases {
+		for i := range goal.Phases {
+			phaseConfig := &goal.Phases[i]
 			if phaseConfig.Name == phaseName {
-				phase = &phaseConfig
+				phase = phaseConfig
 				break
 			}
 		}
@@ -265,9 +266,10 @@ func (c *Config) GetGoalPhaseAndTaskConfig(
 
 	var task *TaskConfig
 	if phase != nil && taskName != "" {
-		for _, taskConfig := range phase.Tasks {
+		for i := range phase.Tasks {
+			taskConfig := &phase.Tasks[i]
 			if taskConfig.Name == taskName {
-				task = &taskConfig
+				task = taskConfig
 				break
 			}
 		}
@@ -343,6 +345,8 @@ func targetableToKV[T targetable](
 // 6. Plugin Settings
 //
 // 7. Global Settings
+//
+// And that's all.
 func (c *Config) ToKV(
 	properties storage.KV,
 	taskPath,

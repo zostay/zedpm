@@ -9,11 +9,12 @@ import (
 // conjunction and an Oxford comma.
 func And(values ...string) string {
 	// TODO This should be replaced with proper localization.
-	if len(values) == 0 {
+	switch len(values) {
+	case 0:
 		return ""
-	} else if len(values) == 1 {
+	case 1:
 		return values[0]
-	} else if len(values) == 2 {
+	case 2:
 		return fmt.Sprintf("%s and %s", values[0], values[1])
 	}
 

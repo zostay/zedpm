@@ -60,7 +60,6 @@ func (s *TaskExecution) prepareStage(
 	return &api.Task_SubStage_Response{
 		ProvidedOrders: orders,
 	}, nil
-
 }
 
 func (s *TaskExecution) PrepareBegin(

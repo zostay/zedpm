@@ -94,5 +94,5 @@ func (g *Github) OwnerProject(ctx context.Context) (string, string, error) {
 		}
 	}
 
-	return owner, project, fmt.Errorf("unable to determing Github project and owner from git remote configuration: remote URL does not look like a github URL")
+	return owner, project, fmt.Errorf("unable to determine Github project and owner from git remote configuration: remote URL does not look like a github URL")
 }

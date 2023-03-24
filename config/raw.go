@@ -115,19 +115,20 @@ func decodeRawProperties(prefix string, in cty.Value) (storage.KV, error) {
 			out.Set(k, ev)
 		}
 
-		if v.Type() == cty.Bool {
+		switch v.Type() {
+		case cty.Bool:
 			var val bool
 			_ = gocty.FromCtyValue(v, &val)
 			out.Set(k, val)
-		} else if v.Type() == cty.Number {
+		case cty.Number:
 			var val float64
 			_ = gocty.FromCtyValue(v, &val)
 			out.Set(k, val)
-		} else if v.Type() == cty.String {
+		case cty.String:
 			var val string
 			_ = gocty.FromCtyValue(v, &val)
 			out.Set(k, val)
-		} else {
+		default:
 			return nil, fmt.Errorf("unknown value type for key %q", k)
 		}
 	}

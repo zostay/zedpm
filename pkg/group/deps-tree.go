@@ -40,7 +40,6 @@ func edgeIndex(edges map[string][]string, from, to string) int {
 	}
 
 	return -1
-
 }
 
 // deleteEdge deletes an edge from the DAG.

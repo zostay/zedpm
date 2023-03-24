@@ -50,7 +50,7 @@ func (g *Goal) Tasks() []plugin.TaskDescription {
 	return tasks
 }
 
-// ExecutionPhases returns teh ordered list of Phases that are part of this
+// ExecutionPhases returns the ordered list of Phases that are part of this
 // Goal. The Phases will be logically executed in this order.
 func (g *Goal) ExecutionPhases() []*Phase {
 	phases := make([]*Phase, len(g.Phases))

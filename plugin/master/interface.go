@@ -174,7 +174,7 @@ func (ti *Interface) Prepare(
 		func(ctx context.Context, pluginName string, iface plugin.Interface) (*taskInfo, error) {
 			ctx, _, err := ti.ctxFor(ctx, taskName, pluginName)
 			if err != nil {
-				return nil, format.WrapErr(err, "unable to setup plugin context", err)
+				return nil, format.WrapErr(err, "unable to setup plugin context")
 			}
 
 			mayPrepare, err := ti.implements(ctx, iface, taskName)
@@ -217,7 +217,7 @@ func (ti *Interface) Prepare(
 	return nil, plugin.ErrUnsupportedTask
 }
 
-// Cancel performs cancellation for task in progress. It works to immediatly
+// Cancel performs cancellation for task in progress. It works to immediately
 // terminate and close out any resources held by all associated plugins.
 func (ti *Interface) Cancel(
 	ctx context.Context,
@@ -231,7 +231,7 @@ func (ti *Interface) Cancel(
 		func(ctx context.Context, _ int, p *taskInfo) error {
 			ctx, _, err := ti.ctxFor(ctx, taskName, p.pluginName)
 			if err != nil {
-				return format.WrapErr(err, "unable to setup plugin context during cancel", err)
+				return format.WrapErr(err, "unable to setup plugin context during cancel")
 			}
 
 			return p.iface.Cancel(ctx, p.task)
@@ -254,7 +254,7 @@ func (ti *Interface) Complete(
 		func(ctx context.Context, _ int, p *taskInfo) error {
 			ctx, _, err := ti.ctxFor(ctx, taskName, p.pluginName)
 			if err != nil {
-				return format.WrapErr(err, "unable to setup plugin context during complete", err)
+				return format.WrapErr(err, "unable to setup plugin context during complete")
 			}
 
 			return p.iface.Complete(ctx, p.task)

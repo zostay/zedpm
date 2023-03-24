@@ -95,7 +95,7 @@ func GetPropertyReleaseDate(ctx context.Context) time.Time {
 	return time.Now()
 }
 
-// ExportPropertyName sets the given property name with teh PropertyExprotPrefix
+// ExportPropertyName sets the given property name with the PropertyExprotPrefix
 // so that it will be rendered by the /info/display task when the info goal is
 // complete.
 func ExportPropertyName(

@@ -32,10 +32,9 @@ func newTaskInfo(
 // Task implements plugin.Task by running the operations associated with a set
 // of plugins whenever those operations are executed on this task object.
 type Task struct {
-	taskName string       // name of the task being executed
-	ti       *Interface   // link back to the parent interface
-	ts       plugin.Tasks // cached list of plugins to work with when executing operations
-	taskInfo []*taskInfo  // the plugins associated with each task
+	taskName string      // name of the task being executed
+	ti       *Interface  // link back to the parent interface
+	taskInfo []*taskInfo // the plugins associated with each task
 }
 
 // newTask constructs a Task.
@@ -45,20 +44,6 @@ func newTask(taskName string, ti *Interface, taskInfo []*taskInfo) *Task {
 		ti:       ti,
 		taskInfo: taskInfo,
 	}
-}
-
-// tasks converts the taskInfo list into a plugin.Tasks, caches the value, and
-// returns it. Subsequent calls will use the cached value.
-func (t *Task) tasks() plugin.Tasks {
-	if t.ts != nil {
-		return t.ts
-	}
-
-	t.ts = make(plugin.Tasks, len(t.taskInfo))
-	for i := range t.taskInfo {
-		t.ts[i] = t.taskInfo[i].task
-	}
-	return t.ts
 }
 
 // Setup executes the Setup operation on all associated plugins concurrently.
@@ -140,7 +125,7 @@ func (t *Task) executeTaskOperation(
 		opfs = append(opfs, func(ctx context.Context) error {
 			ctx, pctx, err := t.ti.ctxFor(ctx, taskName, info.pluginName)
 			if err != nil {
-				return format.WrapErr(err, "unable to setup plugin context", err)
+				return format.WrapErr(err, "unable to setup plugin context")
 			}
 
 			err = op(ctx, info.task)
@@ -185,7 +170,7 @@ func (t *Task) evaluateOperations(
 	for _, tInfo := range t.taskInfo {
 		ctx, pctx, err := t.ti.ctxFor(ctx, t.taskName, tInfo.pluginName)
 		if err != nil {
-			return nil, format.WrapErr(err, "unable to setup plugin context", err)
+			return nil, format.WrapErr(err, "unable to setup plugin context")
 		}
 
 		theseOps, err := op(tInfo.task, ctx)

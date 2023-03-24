@@ -63,15 +63,8 @@ func Execute() {
 		panic(fmt.Sprintf("zedpm failed to discover plugin goals: %v", err))
 	}
 
-	err = configureGoalsPhasesAndTasks(goals, e, runCmd, RunGoal)
-	if err != nil {
-		panic(fmt.Sprintf("zedpm failed to configure run goals: %v\n", err))
-	}
-
-	err = configureGoals(goals, e, depsCmd, RunDepsForGoal)
-	if err != nil {
-		panic(fmt.Sprintf("zedpm failed to configure deps goals: %v\n", err))
-	}
+	configureGoalsPhasesAndTasks(goals, e, runCmd, RunGoal)
+	configureGoals(goals, e, depsCmd, RunDepsForGoal)
 
 	err = rootCmd.Execute()
 	cobra.CheckErr(err)

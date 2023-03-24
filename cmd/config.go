@@ -19,13 +19,11 @@ func configureGoals(
 	e *master.InterfaceExecutor,
 	attachCmd *cobra.Command,
 	runner CmdBuilder,
-) error {
+) {
 	for _, goal := range goals {
 		goalCmd := configureGoalCommand(goal, e, runner)
 		attachCmd.AddCommand(goalCmd)
 	}
-
-	return nil
 }
 
 // configureGoalsPhasesAndTasks goes through all goals, phases, and tasks for
@@ -37,7 +35,7 @@ func configureGoalsPhasesAndTasks(
 	e *master.InterfaceExecutor,
 	attachCmd *cobra.Command,
 	runner CmdBuilder,
-) error {
+) {
 	for _, goal := range goals {
 		goalCmd := configureGoalCommand(goal, e, runner)
 		attachCmd.AddCommand(goalCmd)
@@ -60,8 +58,6 @@ func configureGoalsPhasesAndTasks(
 			}
 		}
 	}
-
-	return nil
 }
 
 // configureTaskCommand builds and returns the configuration for a single
@@ -80,7 +76,7 @@ func configureTaskCommand(
 	}
 }
 
-// configurePhaseCommand builds andr eturns teh configruation for a single
+// configurePhaseCommand builds and returns the configuration for a single
 // subcommand for a given phase.
 func configurePhaseCommand(
 	phase *group.Phase,

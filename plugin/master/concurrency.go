@@ -17,7 +17,7 @@ func RunTasksAndAccumulate[Idx comparable, In, Out any](
 	task func(context.Context, Idx, In) (Out, error),
 ) ([]Out, error) {
 	results := make([]Out, 0, inputs.Len())
-	accErr := make(errors.SliceError, 0, inputs.Len())
+	accErr := make(errors.SliceErrors, 0, inputs.Len())
 
 	resChan := make(chan Out)
 	errChan := make(chan error)

@@ -51,7 +51,7 @@ func Err(err error) string {
 	var sliceErr sliceUnwrap
 	if errors.As(err, &sliceErr) {
 		errs := sliceErr.Unwrap()
-		newErr := make(zErrors.SliceError, len(errs))
+		newErr := make(zErrors.SliceErrors, len(errs))
 		for i, err := range errs {
 			newErr[i] = fmt.Errorf(Err(err))
 		}

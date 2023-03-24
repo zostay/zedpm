@@ -12,11 +12,11 @@ import (
 )
 
 // TODO This file (and the project, in general) seems to have some confusion of
-// langauge that needs to be straigtened out. I appear to use "stage" to refer to both
-// an operational stage within a task and to refer to a groupp of tasks run
-// together. Which is it? I think maybe I should use "operation" and "group" as
-// the terms and skip "stage" altogether, letting stages and phases be synonyms
-// to how we move through the process of task execution generally.
+// language that needs to be straightened out. I appear to use "stage" to refer
+// to both an operational stage within a task and to refer to a group of tasks
+// run together. Which is it? I think maybe I should use "operation" and "group"
+// as the terms and skip "stage" altogether, letting stages and phases be
+// synonyms to how we move through the process of task execution generally.
 
 // TODO Take advantage of Golang 1.20's Unwrap() functionality in Error.
 
@@ -68,7 +68,6 @@ func (e *InterfaceExecutor) tryCancel(
 
 // logFail logs the information related to a task execution failure.
 func (e *InterfaceExecutor) logFail(
-	ctx context.Context,
 	taskName string,
 	stage string,
 	err error,
@@ -90,7 +89,7 @@ func (e *InterfaceExecutor) prepare(
 		if task != nil {
 			e.tryCancel(ctx, taskName, task, "Prepare")
 		}
-		e.logFail(ctx, taskName, "Prepare", err)
+		e.logFail(taskName, "Prepare", err)
 		return nil, err
 	}
 	return task, nil

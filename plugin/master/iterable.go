@@ -91,7 +91,7 @@ func (i *SliceIterator[Val]) Value() Val {
 	return i.is[i.idx]
 }
 
-// Id returns the index of teh current slice element during iteration.
+// Id returns the index of the current slice element during iteration.
 func (i *SliceIterator[Val]) Id() int {
 	return i.idx
 }

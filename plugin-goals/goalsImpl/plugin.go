@@ -60,8 +60,7 @@ func (p *Plugin) Prepare(
 	_ context.Context,
 	taskName string,
 ) (plugin.Task, error) {
-	switch taskName {
-	case "/info/_finally/display":
+	if taskName == "/info/_finally/display" {
 		return &InfoDisplayTask{}, nil
 	}
 	return nil, plugin.ErrUnsupportedTask

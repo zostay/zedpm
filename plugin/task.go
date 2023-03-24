@@ -22,6 +22,8 @@ import (
 // * Finish
 //
 // * Teardown
+//
+// And that's it.
 type Task interface {
 	// Setup should be used exclusively for initial setup of the Task, such as
 	// acquiring resources, setting clients and connections, and other

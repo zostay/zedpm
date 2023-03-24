@@ -59,7 +59,7 @@ func (h *OperationHandler) Call(ctx context.Context) error {
 		func(ctx context.Context, _ int, info *operationInfo) error {
 			ctx, pctx, err := h.ti.ctxFor(ctx, h.taskName, info.pluginName)
 			if err != nil {
-				return format.WrapErr(err, "unable to setup plugin context", err)
+				return format.WrapErr(err, "unable to setup plugin context")
 			}
 
 			err = info.op.Action.Call(ctx)

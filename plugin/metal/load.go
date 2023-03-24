@@ -127,7 +127,7 @@ func LoadPlugins(
 		pcfg := &cfg.Plugins[i]
 
 		var client *goPlugin.Client
-		if plugin, wantsLocal := runPluginServerLocally[pcfg.Name]; wantsLocal {
+		if plugin, wantsLocal := runPluginServerLocally[pcfg.Name]; wantsLocal { //nolint:gocritic // keep this an if-else
 			var err error
 			client, err = LoadLocalPlugin(plugin, logger, stdOut, stdErr)
 			if err != nil {

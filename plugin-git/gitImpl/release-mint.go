@@ -115,7 +115,7 @@ func (s *ReleaseMintTask) MakeReleaseBranch(ctx context.Context) error {
 		Create: true,
 	})
 	if err != nil {
-		return format.WrapErr(err, "unable to checkout branch %s: %v", branch)
+		return format.WrapErr(err, "unable to checkout branch %s", branch)
 	}
 
 	plugin.ForCleanup(ctx, func() {
