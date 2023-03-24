@@ -39,7 +39,7 @@ func Execute() {
 
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "zedpm",
-		Level:  hclog.Warn,
+		Level:  hclog.Info,
 		Output: stdErr,
 	})
 
