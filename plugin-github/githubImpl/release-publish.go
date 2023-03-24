@@ -219,7 +219,7 @@ func (f *ReleasePublishTask) CreateRelease(ctx context.Context) error {
 		"project", project,
 		"tag", tag,
 		"releaseName", releaseName,
-	).Info("Created a release named %q", releaseName)
+	).Info("Created a release")
 
 	return nil
 }
