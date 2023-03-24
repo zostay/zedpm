@@ -11,6 +11,7 @@ import (
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
+	"github.com/zostay/zedpm/plugin-changelog/changelogImpl"
 	"github.com/zostay/zedpm/plugin-git/gitImpl"
 )
 
@@ -20,7 +21,7 @@ import (
 //
 // TODO This is a cheap debugging aid, but should be made nicer and configgable somehow for debugging those sticky problems.
 var runPluginServerLocally = map[string]plugin.Interface{
-	// "changelog": &changelogImpl.Plugin{},
+	"changelog": &changelogImpl.Plugin{},
 	// "github": &githubImpl.Plugin{},
 	"git": &gitImpl.Plugin{},
 }
