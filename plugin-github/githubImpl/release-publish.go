@@ -3,6 +3,7 @@ package githubImpl
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v49/github"
@@ -37,8 +38,19 @@ func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 		return format.WrapErr(err, "failed to get release branch name")
 	}
 
+	logger := plugin.Logger(ctx,
+		"operation", "CheckReadyForMerge",
+		"owner", owner,
+		"project", project,
+		"branch", branch,
+	)
+
 	bp, _, err := f.Client().Repositories.GetBranchProtection(ctx, owner, project, git.GetPropertyGitTargetBranch(ctx))
 	if err != nil {
+		if strings.Contains(err.Error(), "branch is not protected") {
+			logger.Info("Branch is ready to merge")
+			return nil
+		}
 		return format.WrapErr(err, "unable to get branches %s", branch)
 	}
 
@@ -65,12 +77,7 @@ func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 		}
 	}
 
-	plugin.Logger(ctx,
-		"operation", "CheckReadyForMerge",
-		"owner", owner,
-		"project", project,
-		"branch", branch,
-	).Info("All Github required checks appear to be passing")
+	logger.Info("All Github required checks appear to be passing")
 
 	return nil
 }
