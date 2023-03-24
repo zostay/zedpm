@@ -11,6 +11,7 @@ import (
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
+	"github.com/zostay/zedpm/plugin-git/gitImpl"
 )
 
 // runPluginServerLocally is a variable that can be configured to replace or add
@@ -21,6 +22,7 @@ import (
 var runPluginServerLocally = map[string]plugin.Interface{
 	// "changelog": &changelogImpl.Plugin{},
 	// "github": &githubImpl.Plugin{},
+	"git": &gitImpl.Plugin{},
 }
 
 // Clients represents a list of Hashicorp plugins we are running to implement
