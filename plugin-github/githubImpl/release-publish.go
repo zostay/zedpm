@@ -85,7 +85,8 @@ func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 // Check executes CheckReadyForMerge in a loop until either the Github checks
 // pass or 15 minutes have elapsed, whichever comes first.
 func (f *ReleasePublishTask) Check(ctx context.Context) error {
-	const timeout = 15 * time.Minute
+	// TODO Make this timeout into a property like github.publishWaitTimeout
+	const timeout = 1 * time.Minute
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
