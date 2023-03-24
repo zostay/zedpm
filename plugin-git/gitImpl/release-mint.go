@@ -78,7 +78,8 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 		return format.WrapErr(err, "unable to check working copy status")
 	}
 
-	if IsDirty(stat) {
+	ignoreDirty := GetPropertyGitIgnoreDirty(ctx)
+	if !ignoreDirty && IsDirty(stat) {
 		return fmt.Errorf("your working copy is dirty")
 	}
 
