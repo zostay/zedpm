@@ -125,6 +125,9 @@ message Task {
 
       // This is the latest storage provided to the plugin.
       map<string, string> storage = 2;
+
+      // This is the list of all files added by tass to this point.
+      repeated string added_files = 3;
     }
 
     // Task.Cancel.Response is the response object returned from Cancel().
@@ -141,6 +144,9 @@ message Task {
 
       // This is the latest storage provided to the plugin.
       map<string, string> storage = 2;
+
+      // This is the list of files added by all tasks to this point.
+      repeated string added_files = 3;
     }
 
     // Task.Complete.Response is the response object returned from Complete().
@@ -157,6 +163,9 @@ message Task {
 
       // This is the storage as updated during the previous stage.
       map<string, string> storage = 2;
+
+      // This is the list of files that have been added to this point.
+      repeated string added_files = 3;
     }
 
     // Task.Operation.Response describes the result for an execution.
