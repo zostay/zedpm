@@ -5,6 +5,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
+
+	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -21,6 +24,10 @@ type Phase struct {
 	// InterleavedTasks is the list of tasks to be interleaved when running this
 	// phase.
 	InterleavedTasks []*Task
+
+	// pctx is the plugin.Context that is shared by all tasks within this
+	// phase.
+	pctx *plugin.Context
 }
 
 // Path returns the /goalName/phaseName path.
@@ -49,4 +56,19 @@ func (p *Phase) Tasks() []plugin.TaskDescription {
 		tasks = append(tasks, t.Task)
 	}
 	return tasks
+}
+
+// Context returns the plugin.Context that all tasks within this phase share.
+// The given logger and properties are used to initialize the context object if
+// it has not been initialized yet.
+func (p *Phase) Context(
+	logger hclog.Logger,
+	properties storage.KV,
+) *plugin.Context {
+	if p.pctx != nil {
+		return p.pctx
+	}
+
+	p.pctx = plugin.NewContext(logger, properties)
+	return p.pctx
 }
