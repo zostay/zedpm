@@ -5,7 +5,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/zostay/zedpm/plugin"
 	"github.com/zostay/zedpm/plugin/api"
 	"github.com/zostay/zedpm/plugin/translate"
 )
@@ -24,8 +23,8 @@ func (o *Operation) Call(ctx context.Context) error {
 	res, err := o.call(ctx, &api.Task_SubStage_Request{
 		Request: &api.Task_Operation_Request{
 			Task:       o.parent.ref,
-			Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
-			AddedFiles: plugin.ListAdded(ctx),
+			Storage:    translate.KVToStringMapString(KV(ctx)),
+			AddedFiles: ListAdded(ctx),
 		},
 		SubStage: o.order,
 	})
@@ -34,8 +33,8 @@ func (o *Operation) Call(ctx context.Context) error {
 		return err
 	}
 
-	plugin.ApplyChanges(ctx, res.GetStorageUpdate())
-	plugin.ToAdd(ctx, res.GetAddedFiles()...)
+	ApplyChanges(ctx, res.GetStorageUpdate())
+	ToAdd(ctx, res.GetAddedFiles())
 
 	return nil
 }

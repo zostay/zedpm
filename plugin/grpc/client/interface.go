@@ -60,7 +60,7 @@ func (c *Interface) Prepare(
 	res, err := c.client.Prepare(ctx,
 		&api.Task_Prepare_Request{
 			Name:         taskName,
-			GlobalConfig: translate.KVToAPIConfig(plugin.KV(ctx)),
+			GlobalConfig: translate.KVToAPIConfig(KV(ctx)),
 		},
 	)
 	if err != nil {
@@ -70,7 +70,7 @@ func (c *Interface) Prepare(
 		return nil, err
 	}
 
-	plugin.ApplyChanges(ctx, res.GetStorage())
+	ApplyChanges(ctx, res.GetStorage())
 
 	return &Task{
 		client: c.client,
@@ -86,8 +86,8 @@ func (c *Interface) Cancel(
 	ref := task.(*Task).ref
 	_, err := c.client.Cancel(ctx, &api.Task_Cancel_Request{
 		Task:       ref,
-		Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
-		AddedFiles: plugin.ListAdded(ctx),
+		Storage:    translate.KVToStringMapString(KV(ctx)),
+		AddedFiles: ListAdded(ctx),
 	})
 	return err
 }
@@ -100,8 +100,8 @@ func (c *Interface) Complete(
 	ref := task.(*Task).ref
 	_, err := c.client.Complete(ctx, &api.Task_Complete_Request{
 		Task:       ref,
-		Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
-		AddedFiles: plugin.ListAdded(ctx),
+		Storage:    translate.KVToStringMapString(KV(ctx)),
+		AddedFiles: ListAdded(ctx),
 	})
 	return err
 }

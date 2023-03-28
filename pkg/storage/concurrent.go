@@ -18,7 +18,12 @@ type KVCon struct {
 
 // WithSafeConcurrency wraps the given KV in a concurrency safe KVCon.
 func WithSafeConcurrency(inner KV) *KVCon {
-	return &KVCon{inner, &sync.RWMutex{}}
+	return WithLock(inner, &sync.RWMutex{})
+}
+
+// WithLock wraps the given KV in a concurrency safe KVCon using the given lock.
+func WithLock(inner KV, lock *sync.RWMutex) *KVCon {
+	return &KVCon{inner, lock}
 }
 
 // readSyncUU makes writing getters easier.

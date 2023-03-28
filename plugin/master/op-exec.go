@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/zostay/zedpm/format"
+	"github.com/zostay/zedpm/pkg/group"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -61,6 +62,7 @@ func (s *SimpleExecutor) Execute(
 type CompletionExecutor struct {
 	exec  *InterfaceExecutor
 	tasks []plugin.TaskDescription
+	phase *group.Phase
 }
 
 func (c *CompletionExecutor) Execute(

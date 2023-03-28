@@ -24,7 +24,7 @@ type Interface struct {
 	cfg        *config.Config              // the configuration to use during execution
 	is         map[string]plugin.Interface // the plugins to execute
 	targetName string                      // the target to use when choosing configuration
-	properties *storage.KVMem              // temporary properties to hold CLI definitions and definitions that occur during execution
+	pctx       *PhaseContext               // the phase context to track state phase-by-phase
 }
 
 // NewInterface creates a new Interface object for the given configuration and
@@ -34,7 +34,7 @@ func NewInterface(
 	cfg *config.Config,
 	is map[string]plugin.Interface,
 ) *Interface {
-	return &Interface{logger, cfg, is, "", storage.New()}
+	return &Interface{logger, cfg, is, "", NewContext(storage.New())}
 }
 
 // GetInterface retrieves the plugin.Interface for the named plugin.
@@ -51,33 +51,7 @@ func (ti *Interface) SetTargetName(name string) {
 // Define records a new value to store in the in-memory properties used during
 // interface execution.
 func (ti *Interface) Define(values map[string]string) {
-	vals := make(map[string]any, len(values))
-	for k, v := range values {
-		vals[k] = v
-	}
-	ti.properties.Update(vals)
-}
-
-// ctxFor builds a plugin.Context for the current configuration and target and
-// the named task and plugin and associates it with the given context.Context.
-func (ti *Interface) ctxFor(
-	ctx context.Context,
-	taskName string,
-	pluginName string,
-) (context.Context, *plugin.Context, error) {
-	pctx, err := plugin.NewConfigContext(
-		ti.logger,
-		ti.properties,
-		taskName,
-		ti.targetName,
-		pluginName,
-		ti.cfg,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return plugin.InitializeContext(ctx, pctx), pctx, nil
+	ti.pctx.ApplyChanges(values)
 }
 
 // Implements calls Implements on all the associated plugins and returns a
@@ -86,7 +60,7 @@ func (ti *Interface) ctxFor(
 func (ti *Interface) Implements(ctx context.Context) ([]plugin.TaskDescription, error) {
 	taskDescs := make([]plugin.TaskDescription, 0, 100)
 	for pluginName, iface := range ti.is {
-		ctx, _, err := ti.ctxFor(ctx, "", pluginName)
+		ctx, err := ti.ctxFor(ctx, "", pluginName)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +146,7 @@ func (ti *Interface) Prepare(
 		ctx,
 		NewMapIterator[string, plugin.Interface](ti.is),
 		func(ctx context.Context, pluginName string, iface plugin.Interface) (*taskInfo, error) {
-			ctx, _, err := ti.ctxFor(ctx, taskName, pluginName)
+			ctx, err := ti.ctxFor(ctx, taskName, pluginName)
 			if err != nil {
 				return nil, format.WrapErr(err, "unable to setup plugin context")
 			}
@@ -229,7 +203,7 @@ func (ti *Interface) Cancel(
 		ctx,
 		NewSliceIterator[*taskInfo](task.taskInfo),
 		func(ctx context.Context, _ int, p *taskInfo) error {
-			ctx, _, err := ti.ctxFor(ctx, taskName, p.pluginName)
+			ctx, err := ti.ctxFor(ctx, taskName, p.pluginName)
 			if err != nil {
 				return format.WrapErr(err, "unable to setup plugin context during cancel")
 			}
@@ -252,11 +226,31 @@ func (ti *Interface) Complete(
 		ctx,
 		NewSliceIterator[*taskInfo](task.taskInfo),
 		func(ctx context.Context, _ int, p *taskInfo) error {
-			ctx, _, err := ti.ctxFor(ctx, taskName, p.pluginName)
+			ctx, err := ti.ctxFor(ctx, taskName, p.pluginName)
 			if err != nil {
 				return format.WrapErr(err, "unable to setup plugin context during complete")
 			}
 
 			return p.iface.Complete(ctx, p.task)
 		})
+}
+
+// ctxFor builds a plugin.Context for the current configuration and target and
+// the named task and plugin and associates it with the given context.Context.
+func (ti *Interface) ctxFor(
+	ctx context.Context,
+	taskName string,
+	pluginName string,
+) (context.Context, error) {
+	configProps, err := ti.cfg.ToKV(
+		storage.New(),
+		taskName,
+		ti.targetName,
+		pluginName,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ti.pctx.withPluginTask(ctx, configProps), nil
 }

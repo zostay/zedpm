@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/zostay/zedpm/format"
-	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -123,17 +122,10 @@ func (t *Task) executeTaskOperation(
 	for i := range t.taskInfo {
 		info := t.taskInfo[i]
 		opfs = append(opfs, func(ctx context.Context) error {
-			ctx, pctx, err := t.ti.ctxFor(ctx, taskName, info.pluginName)
-			if err != nil {
-				return format.WrapErr(err, "unable to setup plugin context")
-			}
-
-			err = op(ctx, info.task)
+			err := op(ctx, info.task)
 			if err != nil {
 				return err
 			}
-
-			pctx.UpdateStorage(pctx.StorageChanges())
 
 			return nil
 		})
@@ -166,27 +158,17 @@ func (t *Task) evaluateOperations(
 	op func(plugin.Task, context.Context) (plugin.Operations, error),
 ) ([]*operationInfo, error) {
 	opInfo := make([]*operationInfo, 0, len(t.taskInfo))
-	accChanges := storage.New()
 	for _, tInfo := range t.taskInfo {
-		ctx, pctx, err := t.ti.ctxFor(ctx, t.taskName, tInfo.pluginName)
-		if err != nil {
-			return nil, format.WrapErr(err, "unable to setup plugin context")
-		}
-
 		theseOps, err := op(tInfo.task, ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		accChanges.UpdateStrings(pctx.StorageChanges())
 
 		for _, thisOp := range theseOps {
 			info := newOperationInfo(tInfo.pluginName, thisOp)
 			opInfo = append(opInfo, info)
 		}
 	}
-
-	t.ti.properties.UpdateStrings(accChanges.AllSettingsStrings())
 
 	sort.Slice(opInfo, operationInfoLess(opInfo))
 

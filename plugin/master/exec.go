@@ -39,13 +39,13 @@ func NewExecutor(logger hclog.Logger, m *Interface) *InterfaceExecutor {
 // SetTargetName is used to update the target name to use when configuring the
 // plugin.Context used to execute plugin.Interface.
 func (e *InterfaceExecutor) SetTargetName(name string) {
-	e.m.SetTargetName(name)
+	e.SetTargetName(name)
 }
 
 // Define is used to set properties from the command-line or other locations to
 // be used when running the plugin.Interface.
 func (e *InterfaceExecutor) Define(values map[string]string) {
-	e.m.Define(values)
+	e.Define(values)
 }
 
 // tryCancel executes plugin.Interface.Cancel on the object and internally
@@ -153,9 +153,10 @@ func (e *InterfaceExecutor) ExecutePhase(
 		&SimpleExecutor{"finish", e, phase.Tasks(), plugin.Task.Finish},
 		&SimpleExecutor{"teardown", e, phase.Tasks(), plugin.Task.Teardown},
 
-		&CompletionExecutor{e, phase.Tasks()},
+		&CompletionExecutor{e, phase.Tasks(), phase},
 	}
 
+	e.m.pctx.nextPhase()
 	for _, op := range ops {
 		err := op.Execute(ctx)
 		if err != nil {

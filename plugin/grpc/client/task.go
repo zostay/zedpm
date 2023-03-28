@@ -33,16 +33,16 @@ func (t *Task) operation(
 ) error {
 	res, err := op(ctx, &api.Task_Operation_Request{
 		Task:       t.ref,
-		Storage:    translate.KVToStringMapString(plugin.KV(ctx)),
-		AddedFiles: plugin.ListAdded(ctx),
+		Storage:    translate.KVToStringMapString(KV(ctx)),
+		AddedFiles: ListAdded(ctx),
 	})
 
 	if err != nil {
 		return err
 	}
 
-	plugin.ApplyChanges(ctx, res.GetStorageUpdate())
-	plugin.ToAdd(ctx, res.GetAddedFiles()...)
+	ApplyChanges(ctx, res.GetStorageUpdate())
+	ToAdd(ctx, res.GetAddedFiles())
 
 	return nil
 }
