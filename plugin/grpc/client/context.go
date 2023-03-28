@@ -15,6 +15,13 @@ type Context interface {
 	ToAdd([]string)
 }
 
+func WithContext(
+	ctx context.Context,
+	cctx Context,
+) context.Context {
+	return context.WithValue(ctx, ContextKey{}, cctx)
+}
+
 func clientContext(ctx context.Context) Context {
 	return ctx.Value(ContextKey{}).(Context)
 }

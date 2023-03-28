@@ -42,7 +42,7 @@ func (pc *PhaseContext) withPluginTask(
 	ctx context.Context,
 	configProps storage.KV,
 ) context.Context {
-	return context.WithValue(ctx, client.ContextKey{}, &PluginTaskContext{
+	return client.WithContext(ctx, &PluginTaskContext{
 		PhaseContext: pc,
 		configProps:  configProps,
 		localChanges: pc.properties.Inner,
