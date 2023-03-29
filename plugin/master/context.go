@@ -61,7 +61,7 @@ func (ptc *PluginTaskContext) KV() *storage.KVCon {
 }
 
 // nextPhase transitions a phase context to the next phase by absorbing all the
-// changes from associated plugin/task contexts. It then resets teh plugin task
+// changes from associated plugin/task contexts. It then resets the plugin task
 // list to empty.
 func (pc *PhaseContext) nextPhase() {
 	pc.properties.Inner.Update(pc.properties.Changes())

@@ -46,6 +46,10 @@ func (s *TaskExecution) executePrioritizedStage(
 				},
 			)
 
+			if err != nil {
+				return nil, err
+			}
+
 			theseChanges := res.GetStorageUpdate()
 			accChanges.UpdateStrings(theseChanges)
 		}
