@@ -1,4 +1,4 @@
-WIP  TBD
+v0.0.0  2023-03-29
 
  * Initial release.
  * Provides the zedpm command entrypoint with self-configuring sub-commands
