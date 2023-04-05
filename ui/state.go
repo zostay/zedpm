@@ -4,10 +4,20 @@ import (
 	"strings"
 )
 
+const (
+	boundary           = "⏷ Active Tasks ⏷ ──── ⏶ Logs ⏶"
+	headerLineLine     = `-`
+	headerLineEllipsis = `…`
+	headerWidth        = 70
+)
+
+type WidgetID int
 type Widget []string
 type State struct {
 	term    *Terminal
-	widgets []Widget
+	serial  WidgetID
+	widgets map[WidgetID]Widget
+	order   []WidgetID
 }
 
 func NewWidget(size int) Widget {
@@ -15,17 +25,24 @@ func NewWidget(size int) Widget {
 }
 
 func NewState(term *Terminal, capacity int) *State {
-	w := make([]Widget, 0, capacity)
 	s := &State{
 		term:    term,
-		widgets: w,
+		widgets: make(map[WidgetID]Widget, capacity),
+		order:   make([]WidgetID, 0, capacity),
 	}
 	s.writeBoundary()
 	return s
 }
 
+func makeHeader(line string) string {
+	if len(line) > headerWidth-10 {
+		line = line[:headerWidth-11] + headerLineEllipsis
+	}
+	return strings.Repeat(headerLineLine, 4) + " " + line + " " + strings.Repeat(headerLineLine, headerWidth-5-len(line))
+}
+
 func (s *State) writeBoundary() {
-	s.term.WriteLine("---- ⏷ Active Tasks ⏷ ---- ⏶ Logs ⏶ ----")
+	s.term.WriteLine(makeHeader(boundary))
 }
 
 func (s *State) resizeAndDraw(oldToBoundary int) {
@@ -50,7 +67,8 @@ func (s *State) draw(logLine string) {
 
 	s.writeBoundary()
 
-	for _, p := range s.widgets {
+	for _, o := range s.order {
+		p := s.widgets[o]
 		for _, l := range p {
 			s.term.WriteLine(l)
 		}
@@ -67,24 +85,33 @@ func (s *State) redraw(line string) {
 	s.draw(line)
 }
 
-func (s *State) AddWidget(widget Widget) {
+func (s *State) AddWidget(widget Widget) WidgetID {
 	oldToBoundary := s.MovementsToBoundary()
-	s.widgets = append(s.widgets, widget)
+	s.serial++
+	s.widgets[s.serial] = widget
+	s.order = append(s.order, s.serial)
+	s.resizeAndDraw(oldToBoundary)
+	return s.serial
+}
+
+func (s *State) DeleteWidget(n WidgetID) {
+	oldToBoundary := s.MovementsToBoundary()
+	for i, o := range s.order {
+		if o == n {
+			copy(s.order[i:], s.order[i+1:])
+			s.order = s.order[:len(s.order)-1]
+		}
+	}
+	delete(s.widgets, n)
 	s.resizeAndDraw(oldToBoundary)
 }
 
-func (s *State) DeleteWidget(n int) {
-	oldToBoundary := s.MovementsToBoundary()
-	copy(s.widgets[n:], s.widgets[n+1:])
-	s.widgets = s.widgets[:len(s.widgets)-1]
-	s.resizeAndDraw(oldToBoundary)
-}
-
-func (s *State) Title(n int) string {
+func (s *State) Title(n WidgetID) string {
 	return s.widgets[n][0]
 }
 
-func (s *State) SetTitle(n int, line string) {
+func (s *State) SetTitle(n WidgetID, line string) {
+	line = makeHeader(line)
 	if len(s.widgets[n]) < 1 {
 		s.widgets[n] = append(s.widgets[n], line)
 		return
@@ -104,7 +131,7 @@ func (s *State) Redraw() {
 	s.redraw("")
 }
 
-func (s *State) Log(n int, line string) {
+func (s *State) Log(n WidgetID, line string) {
 	switch {
 	case len(s.widgets[n]) < cap(s.widgets[n]):
 		s.widgets[n] = append(s.widgets[n], line)
@@ -122,7 +149,7 @@ func (s *State) Log(n int, line string) {
 	s.redraw(line)
 }
 
-func (s *State) Set(n, m int, line string) {
+func (s *State) Set(n WidgetID, m int, line string) {
 	if len(s.widgets[n]) < m+1 {
 		s.widgets[n] = append(s.widgets[n], strings.Repeat("", m+1-len(s.widgets[n])))
 	}
@@ -132,7 +159,7 @@ func (s *State) Set(n, m int, line string) {
 
 func (s *State) Close() {
 	for len(s.widgets) > 0 {
-		s.DeleteWidget(0)
+		s.DeleteWidget(s.order[0])
 	}
 	s.term.MoveUp(1)
 	s.term.ClearLine()
