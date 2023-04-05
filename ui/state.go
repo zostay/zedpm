@@ -1,121 +1,139 @@
 package ui
 
-import "fmt"
+import (
+	"strings"
+)
 
 type Widget []string
-type State []Widget
+type State struct {
+	term    *Terminal
+	widgets []Widget
+}
 
 func NewWidget(size int) Widget {
 	return make(Widget, 0, size)
 }
 
-func NewState(capacity int) State {
-	s := make(State, 0, capacity)
-	WriteBoundary()
+func NewState(term *Terminal, capacity int) *State {
+	w := make([]Widget, 0, capacity)
+	s := &State{
+		term:    term,
+		widgets: w,
+	}
+	s.writeBoundary()
 	return s
 }
 
-func resizeAndDraw(prev, s State) {
-	var (
-		newToBoundary = s.MovementsToBoundary()
-		oldToBoundary = prev.MovementsToBoundary()
-	)
-
-	if newToBoundary > oldToBoundary {
-		AddLines(newToBoundary - oldToBoundary)
-	} else if newToBoundary < oldToBoundary {
-		MoveUp(oldToBoundary - newToBoundary)
-		ClearLines(oldToBoundary - newToBoundary)
-		MoveUp(oldToBoundary - newToBoundary)
-	}
-
-	MoveUp(newToBoundary)
-
-	draw(s, "")
+func (s *State) writeBoundary() {
+	s.term.WriteLine("---- ⏷ Active Tasks ⏷ ---- ⏶ Logs ⏶ ----")
 }
 
-func draw(s State, logLine string) {
-	if logLine != "" {
-		ClearLine()
-		fmt.Println(logLine)
+func (s *State) resizeAndDraw(oldToBoundary int) {
+	newToBoundary := s.MovementsToBoundary()
+	if newToBoundary > oldToBoundary {
+		s.term.AddLines(newToBoundary - oldToBoundary)
+	} else if newToBoundary < oldToBoundary {
+		s.term.MoveUp(oldToBoundary - newToBoundary)
+		s.term.ClearLines(oldToBoundary - newToBoundary)
+		s.term.MoveUp(oldToBoundary - newToBoundary)
 	}
 
-	WriteBoundary()
+	s.term.MoveUp(newToBoundary)
 
-	for _, p := range s {
+	s.draw("")
+}
+
+func (s *State) draw(logLine string) {
+	if logLine != "" {
+		s.term.WriteLine(logLine)
+	}
+
+	s.writeBoundary()
+
+	for _, p := range s.widgets {
 		for _, l := range p {
-			ClearLine()
-			fmt.Println(l)
+			s.term.WriteLine(l)
 		}
 
 		for i := 0; i < cap(p)-len(p); i++ {
-			ClearLine()
-			fmt.Println("")
+			s.term.WriteLine("")
 		}
 	}
 }
 
-func redraw(s State, line string) {
+func (s *State) redraw(line string) {
 	toBoundary := s.MovementsToBoundary()
-	MoveUp(toBoundary)
-	draw(s, line)
+	s.term.MoveUp(toBoundary)
+	s.draw(line)
 }
 
-func (s State) AddWidget(widget Widget) State {
-	newState := append(s, widget)
-	resizeAndDraw(s, newState)
-	return newState
+func (s *State) AddWidget(widget Widget) {
+	oldToBoundary := s.MovementsToBoundary()
+	s.widgets = append(s.widgets, widget)
+	s.resizeAndDraw(oldToBoundary)
 }
 
-func (s State) DeleteWidget(n int) State {
-	copy(s[n:], s[n+1:])
-	newState := s[:len(s)-1]
-	resizeAndDraw(s, newState)
-	return newState
+func (s *State) DeleteWidget(n int) {
+	oldToBoundary := s.MovementsToBoundary()
+	copy(s.widgets[n:], s.widgets[n+1:])
+	s.widgets = s.widgets[:len(s.widgets)-1]
+	s.resizeAndDraw(oldToBoundary)
 }
 
-func (s State) Title(n int) string {
-	return s[n][0]
+func (s *State) Title(n int) string {
+	return s.widgets[n][0]
 }
 
-func (s State) SetTitle(n int, line string) {
-	s[n][0] = line
+func (s *State) SetTitle(n int, line string) {
+	if len(s.widgets[n]) < 1 {
+		s.widgets[n] = append(s.widgets[n], line)
+		return
+	}
+	s.widgets[n][0] = line
 }
 
-func (s State) MovementsToBoundary() int {
+func (s *State) MovementsToBoundary() int {
 	l := 1
-	for _, p := range s {
+	for _, p := range s.widgets {
 		l += cap(p)
 	}
 	return l
 }
 
-func (s State) Redraw() {
-	redraw(s, "")
+func (s *State) Redraw() {
+	s.redraw("")
 }
 
-func (s State) Log(n int, line string) {
+func (s *State) Log(n int, line string) {
 	switch {
-	case len(s[n]) < cap(s[n]):
-		s[n] = append(s[n], line)
+	case len(s.widgets[n]) < cap(s.widgets[n]):
+		s.widgets[n] = append(s.widgets[n], line)
 
-	case len(s[n]) == 1:
-		s[n][0] = line
+	case len(s.widgets[n]) == 1:
+		s.widgets[n][0] = line
 
 	default:
-		for i := 1; i < len(s[n])-1; i++ {
-			s[n][i] = s[n][i+1]
+		for i := 1; i < len(s.widgets[n])-1; i++ {
+			s.widgets[n][i] = s.widgets[n][i+1]
 		}
-		s[n][len(s[n])-1] = line
+		s.widgets[n][len(s.widgets[n])-1] = line
 	}
 
-	redraw(s, line)
+	s.redraw(line)
 }
 
-func (s State) Close() {
-	for len(s) > 0 {
-		s = s.DeleteWidget(0)
+func (s *State) Set(n, m int, line string) {
+	if len(s.widgets[n]) < m+1 {
+		s.widgets[n] = append(s.widgets[n], strings.Repeat("", m+1-len(s.widgets[n])))
 	}
-	MoveUp(1)
-	ClearLine()
+	s.widgets[n][m] = line
+	s.redraw("")
+}
+
+func (s *State) Close() {
+	for len(s.widgets) > 0 {
+		s.DeleteWidget(0)
+	}
+	s.term.MoveUp(1)
+	s.term.ClearLine()
 }
