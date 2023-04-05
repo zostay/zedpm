@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -35,10 +36,12 @@ func NewState(term *Terminal, capacity int) *State {
 }
 
 func makeHeader(line string) string {
-	if len(line) > headerWidth-10 {
-		line = line[:headerWidth-11] + headerLineEllipsis
+	if utf8.RuneCountInString(line) > headerWidth-10 {
+		line = string([]rune(line)[:headerWidth-11]) + headerLineEllipsis
 	}
-	return strings.Repeat(headerLineLine, 4) + " " + line + " " + strings.Repeat(headerLineLine, headerWidth-5-len(line))
+	trailerLen := headerWidth - 5 - utf8.RuneCountInString(line)
+	return strings.Repeat(headerLineLine, 4) + " " +
+		line + " " + strings.Repeat(headerLineLine, trailerLen)
 }
 
 func (s *State) writeBoundary() {
