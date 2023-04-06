@@ -43,14 +43,18 @@ type change struct {
 	line   string
 }
 
+var (
+	red    = "\U0001f534"
+	yellow = "\U0001f7e1"
+	green  = "\U0001f7e2"
+)
+
 var simChanges = []change{
-	{0, OpAddWidget, ProgressBar, 6, ""},
-	{0, OpSetWidget, ProgressBar, 0, "╔═══════╗    ┌──────┐    ┌───────┐    ┌─────┐"},
-	{0, OpSetWidget, ProgressBar, 1, "║ Start ║ -> │ Mint │ -> │ Phase │ -> │ End │"},
-	{0, OpSetWidget, ProgressBar, 2, "╚═══════╝    └──────┘    └───────┘    └─────┘"},
-	{0, OpSetWidget, ProgressBar, 3, "╔════════╗"},
-	{0, OpSetWidget, ProgressBar, 4, "║ Plugin ║"},
-	{0, OpSetWidget, ProgressBar, 5, "╚════════╝"},
+	{0, OpAddWidget, ProgressBar, 4, ""},
+	{0, OpSetWidget, ProgressBar, 0, yellow + " Initialize"},
+	{0, OpSetWidget, ProgressBar, 1, red + " Mint"},
+	{0, OpSetWidget, ProgressBar, 2, red + " Phase"},
+	{0, OpSetWidget, ProgressBar, 3, red + " Quit"},
 	{0, OpAddWidget, InitializeLog, 4, ""},
 	{0, OpSetWidgetTitle, InitializeLog, 0, "Configuring plugins"},
 	{100 * time.Millisecond, OpLog, InitializeLog, 0, "[Initialize] master: Configuring plugins..."},
@@ -59,12 +63,8 @@ var simChanges = []change{
 	{100 * time.Millisecond, OpLog, InitializeLog, 0, "[Initialize] master: - Loading zedpm-plugin-github"},
 	{100 * time.Millisecond, OpLog, InitializeLog, 0, "[Initialize] master: - Loading zedpm-plugin-goals"},
 	{1 * time.Second, OpLog, InitializeLog, 0, "[Initialize] master: Complete."},
-	{0, OpSetWidget, ProgressBar, 0, "┌───────┐    ╔══════╗    ┌───────┐    ┌─────┐"},
-	{0, OpSetWidget, ProgressBar, 1, "│ Start │ -> ║ Mint ║ -> │ Phase │ -> │ End │"},
-	{0, OpSetWidget, ProgressBar, 2, "└───────┘    ╚══════╝    └───────┘    └─────┘"},
-	{0, OpSetWidget, ProgressBar, 3, "╔═══════╗    ┌───────┐    ┌───────┐    ┌─────┐    ┌─────┐    ┌────────┐    ┌──────────┐"},
-	{0, OpSetWidget, ProgressBar, 4, "║ Setup ║ -> │ Check │ -> │ Begin │ -> │ Run │ -> │ End │ -> │ Finish │ -> │ Teardown │"},
-	{0, OpSetWidget, ProgressBar, 5, "╚═══════╝    └───────┘    └───────┘    └─────┘    └─────┘    └────────┘    └──────────┘"},
+	{0, OpSetWidget, ProgressBar, 0, green + " Initialize"},
+	{0, OpSetWidget, ProgressBar, 1, yellow + " Mint [Setup]"},
 	{0, OpDeleteWidget, InitializeLog, 0, ""},
 	{0, OpAddWidget, ChangelogLog, 4, ""},
 	{0, OpSetWidgetTitle, ChangelogLog, 0, "Changelog"},
@@ -72,21 +72,33 @@ var simChanges = []change{
 	{0, OpSetWidgetTitle, GitLog, 0, "Git"},
 	{0, OpAddWidget, GithubLog, 4, ""},
 	{0, OpSetWidgetTitle, GithubLog, 0, "Github"},
-	{100 * time.Millisecond, OpSetWidget, ProgressBar, 3, "┌───────┐    ╔═══════╗    ┌───────┐    ┌─────┐    ┌─────┐    ┌────────┐    ┌──────────┐"},
-	{0, OpSetWidget, ProgressBar, 4, "│ Setup │ -> ║ Check ║ -> │ Begin │ -> │ Run │ -> │ End │ -> │ Finish │ -> │ Teardown │"},
-	{0, OpSetWidget, ProgressBar, 5, "└───────┘    ╚═══════╝    └───────┘    └─────┘    └─────┘    └────────┘    └──────────┘"},
-	{0, OpLog, ChangelogLog, 0, "[Check] zedpm-plugin-changelog: Linting changelog..."},
+	{0 * time.Millisecond, OpSetWidget, ProgressBar, 1, yellow + " Mint [Check]"},
+	{100, OpLog, ChangelogLog, 0, "[Check] zedpm-plugin-changelog: Linting changelog..."},
 	{0, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: Check worktree cleanliness..."},
 	{800 * time.Millisecond, OpLog, GithubLog, 0, "[Check] zedpm-plugin-github: ..."},
 	{300 * time.Millisecond, OpLog, ChangelogLog, 0, "[Check] zedpm-plugin-changelog: - Changes.md: PASS"},
-	{1100 * time.Millisecond, OpLog, ChangelogLog, 0, "[Check] zedpm-plugin-changelog: Complete."},
 	{900 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: - Found HEAD"},
 	{100 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: - HEAD branch matches expected target branch: master"},
 	{100 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: - Listing remote references."},
 	{200 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: - Local copy matches remote reference."},
 	{500 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: - Local copy is clean."},
 	{1200 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: - Work tree check: PASS"},
-	{400 * time.Millisecond, OpLog, GitLog, 0, "[Check] zedpm-plugin-git: Complete."},
+	{0, OpSetWidget, ProgressBar, 1, yellow + " Mint [Run:30]"},
+	{300 * time.Millisecond, OpLog, GitLog, 0, "[Run:30] zedpm-plugin-git: - Created git branch for managing the release"},
+	{0, OpSetWidget, ProgressBar, 1, yellow + " Mint [Run:50]"},
+	{200 * time.Millisecond, OpLog, ChangelogLog, 0, "[Run:50] zedpm-plugin-changelog: - Applied changes to changelog to fixup for release"},
+	{100 * time.Millisecond, OpLog, ChangelogLog, 0, "[Run:55] zedpm-plugin-changelog: - Changelog linted for release: PASS"},
+	{0, OpSetWidget, ProgressBar, 1, yellow + " Mint [Run:55]"},
+	{1100 * time.Millisecond, OpLog, ChangelogLog, 0, "[Complete] zedpm-plugin-changelog: Mint Phase Complete"},
+	{0, OpSetWidget, ProgressBar, 1, yellow + " Mint [End:70]"},
+	{300 * time.Millisecond, OpLog, GitLog, 0, "[End:70] zedpm-plugin-git: - Added Files and committing changes to git"},
+	{0, OpSetWidget, ProgressBar, 1, yellow + " Mint [End:75]"},
+	{700 * time.Millisecond, OpLog, GitLog, 0, "[End:75] zedpm-plugin-git: - Pushed release branch to remote repository"},
+	{400 * time.Millisecond, OpLog, GitLog, 0, "[Complete] zedpm-plugin-git: Mint Phase Complete"},
+	{1400 * time.Millisecond, OpLog, GithubLog, 0, "[End:80] zedpm-plugin-github: - Created Github pull request"},
+	{600 * time.Millisecond, OpLog, GithubLog, 0, "[Complete] zedpm-plugin-github: Mint Phase Complete"},
+	{0, OpSetWidget, ProgressBar, 1, green + " Mint"},
+	{0, OpSetWidget, ProgressBar, 2, yellow + " Publish"},
 }
 
 func main() {
@@ -107,5 +119,6 @@ func main() {
 		}
 		time.Sleep(c.delay)
 	}
+	time.Sleep(2 * time.Second)
 	state.Close()
 }

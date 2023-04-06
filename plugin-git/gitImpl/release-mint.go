@@ -203,7 +203,7 @@ func (s *ReleaseMintTask) PushReleaseBranch(ctx context.Context) error {
 
 	plugin.Logger(ctx,
 		"branchRefSpec", branchRefSpec,
-	).Info("Pushed release branch to remote repository.")
+	).Info("Pushed release branch to remote repository")
 
 	return nil
 }
