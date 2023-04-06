@@ -39,6 +39,8 @@ func (t *Terminal) AddLines(n int) {
 
 // WriteLine will write a single line to the screen. If the given line contains
 // a newline, it will be replaced by U+2424 (SYMBOL FOR NEWLINE) on screen.
+// This will blank any existing data on the current line before writing and will
+// move the cursor down one line afterward.
 func (t *Terminal) WriteLine(line string) {
 	t.ClearLine()
 	strings.ReplaceAll(line, "\n", "\u2424")
