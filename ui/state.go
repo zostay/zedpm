@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	boundary           = "⏷ Active Tasks ⏷ ──── ⏶ Logs ⏶"
+	boundary           = "⏷ Progress ⏷ ──── ⏶ Logs ⏶"
 	headerLineLine     = `-`
 	headerLineEllipsis = `…`
 	defaultHeaderWidth = 78
