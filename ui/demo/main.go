@@ -95,7 +95,7 @@ func main() {
 	for _, c := range simChanges {
 		switch c.op {
 		case OpAddWidget:
-			wm[c.widget] = state.AddWidget(ui.NewWidget(c.n))
+			wm[c.widget] = state.AddWidget(c.n)
 		case OpDeleteWidget:
 			state.DeleteWidget(wm[c.widget])
 		case OpLog:
