@@ -85,7 +85,7 @@ func (s *State) resizeAndDraw(oldToBoundary int) {
 // been moved to the location of the boundary line.
 func (s *State) draw(logLine string) {
 	if logLine != "" {
-		s.term.WriteLine(logLine)
+		s.term.Println(logLine)
 	}
 
 	s.writeBoundary()
