@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"time"
 
@@ -101,7 +102,7 @@ var simChanges = []change{
 	{0, OpSetWidget, ProgressBar, 2, yellow + " Publish"},
 }
 
-func main() {
+func oldMain() {
 	term := ui.NewTerminal(os.Stdout)
 	state := ui.NewState(term, 4)
 	for _, c := range simChanges {
@@ -121,4 +122,52 @@ func main() {
 	}
 	time.Sleep(2 * time.Second)
 	state.Close()
+}
+
+type progChange func(p *ui.Progress)
+
+var simProgressChanges = []progChange{
+	func(p *ui.Progress) { p.SetPhases([]string{"Initialize", "Mint", "Publish", "Quit"}) },
+	func(p *ui.Progress) { p.StartPhase(0, 1) },
+	func(p *ui.Progress) { p.RegisterTask("master", "master") },
+	func(p *ui.Progress) { p.Log("master", "plugin", "Configuring plugins...") },
+	func(p *ui.Progress) { p.Log("master", "plugin", " - Loading zedpm-plugin-changelog") },
+	func(p *ui.Progress) { p.Log("master", "plugin", " - Loading zedpm-plugin-git") },
+	func(p *ui.Progress) { p.Log("master", "plugin", " - Loading zedpm-plugin-github") },
+	func(p *ui.Progress) { p.Log("master", "plugin", " - Loading zedpm-plugin-goals") },
+	func(p *ui.Progress) { p.Log("master", "plugin", " - master: Complete.") },
+	func(p *ui.Progress) { p.StartPhase(1, 3) },
+	func(p *ui.Progress) {
+		p.RegisterTask("changelog", "Changelog")
+		p.RegisterTask("git", "Git")
+		p.RegisterTask("github", "Github")
+	},
+	func(p *ui.Progress) { p.Log("changelog", "Check", "Linting changelog...") },
+	func(p *ui.Progress) { p.Log("git", "Check", "Check worktree cleanliness...") },
+	func(p *ui.Progress) { p.Log("changelog", "Check", " - Changes.md: PASS") },
+	func(p *ui.Progress) { p.Log("git", "Check", " - Found HEAD") },
+	func(p *ui.Progress) { p.Log("git", "Check", " - HEAD branch matches expected target branch: master") },
+	func(p *ui.Progress) { p.Log("git", "Check", " - Listing remote references.") },
+	func(p *ui.Progress) { p.Log("git", "Check", " - Local copy matches remote reference.") },
+	func(p *ui.Progress) { p.Log("git", "Check", " - Local copy is clean.") },
+	func(p *ui.Progress) { p.Log("git", "Check", " - Work tree check: PASS") },
+	func(p *ui.Progress) { p.Log("git", "Run:30", " - Created git branch for managing the release") },
+	func(p *ui.Progress) {
+		p.Log("changelog", "Run:50", " - Applied changes to changelog to fixup for release")
+	},
+	func(p *ui.Progress) { p.Log("changelog", "Run:55", " - Changelog linted for release: PASS") },
+	func(p *ui.Progress) { p.Log("git", "End:70", " - Added Files and committing changes to git") },
+	func(p *ui.Progress) { p.Log("git", "End:75", " - Pushed release branch to remote repository") },
+	func(p *ui.Progress) { p.Log("github", "End:80", " - Created Github pull request") },
+	func(p *ui.Progress) { p.StartPhase(2, 0) },
+	func(p *ui.Progress) { p.StartPhase(3, 0) },
+}
+
+func main() {
+	p := ui.NewProgress(os.Stdout)
+	defer p.Close()
+	for _, sim := range simProgressChanges {
+		sim(p)
+		time.Sleep(time.Duration(rand.Intn(15)) * 100 * time.Millisecond)
+	}
 }
