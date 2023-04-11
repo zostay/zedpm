@@ -112,7 +112,8 @@ func oldMain() {
 		case OpDeleteWidget:
 			state.DeleteWidget(wm[c.widget])
 		case OpLog:
-			state.Log(wm[c.widget], c.line)
+			state.LogWidget(wm[c.widget], c.line)
+			state.Log(c.line)
 		case OpSetWidget:
 			state.Set(wm[c.widget], c.n, c.line)
 		case OpSetWidgetTitle:
@@ -127,9 +128,11 @@ func oldMain() {
 type progChange func(p *ui.Progress)
 
 var simProgressChanges = []progChange{
-	func(p *ui.Progress) { p.SetPhases([]string{"Initialize", "Mint", "Publish", "Quit"}) },
-	func(p *ui.Progress) { p.StartPhase(0, 1) },
-	func(p *ui.Progress) { p.RegisterTask("master", "master") },
+	func(p *ui.Progress) {
+		p.SetPhases([]string{"Initialize", "Mint", "Publish", "Quit"})
+		p.StartPhase(0, 1)
+		p.RegisterTask("master", "Master")
+	},
 	func(p *ui.Progress) { p.Log("master", "plugin", "Configuring plugins...") },
 	func(p *ui.Progress) { p.Log("master", "plugin", " - Loading zedpm-plugin-changelog") },
 	func(p *ui.Progress) { p.Log("master", "plugin", " - Loading zedpm-plugin-git") },

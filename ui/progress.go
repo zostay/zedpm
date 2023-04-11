@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/zostay/go-std/generic"
@@ -166,10 +167,12 @@ func (p *Progress) Log(taskName string, op string, line string) {
 	w := p.widgets[taskName]
 	if p.compact {
 		p.state.Set(w, 0, short+": "+line)
-		p.state.Log(-1, line)
+		p.state.LogWidget(-1, line)
 	} else {
-		p.state.Log(w, line)
+		p.state.LogWidget(w, line)
 	}
+
+	p.state.Log(fmt.Sprintf("%10s / %-6s : %s", short, op, line))
 
 	p.phases[p.currentPhase].operation = op
 

@@ -15,7 +15,7 @@ const (
 // WidgetID allows the caller to address individual widgets.
 type WidgetID int
 
-// NoWidget is the WidgetID to use when an operation (see State.Log) needs to be
+// NoWidget is the WidgetID to use when an operation (see State.LogWidget) needs to be
 // performed without referring to a widget.
 const NoWidget WidgetID = -1
 
@@ -157,14 +157,19 @@ func (s *State) Redraw() {
 	s.redraw("")
 }
 
-// Log will write a log to the widget identified by the given WidgetID. If no
+// Log will write a log to the top-log.
+func (s *State) Log(line string) {
+	s.redraw(line)
+}
+
+// LogWidget will write a log to the widget identified by the given WidgetID. If no
 // such widget exists or the NoWidget constant is passed, the log is recorded
 // above the boundary without writing anything to the state below.
-func (s *State) Log(id WidgetID, line string) {
+func (s *State) LogWidget(id WidgetID, line string) {
 	if widget, widgetExists := s.widgets[id]; widgetExists {
 		widget.Log(line)
 	}
-	s.redraw(line)
+	s.redraw("")
 }
 
 // Set will set the value of a specific widget line to the given value. If the
