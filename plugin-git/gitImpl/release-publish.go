@@ -47,7 +47,7 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 		Message: fmt.Sprintf("Release tag %q", tag),
 	})
 	if err != nil {
-		return format.WrapErr(err, "unable to tag release %s", tag)
+		return format.WrapErr(err, "unable to tag release %q", tag)
 	}
 
 	plugin.ForCleanup(ctx, func() { _ = f.Repository().DeleteTag(tag) })
@@ -62,7 +62,7 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 		RefSpecs:   []config.RefSpec{tagRefSpec},
 	})
 	if err != nil {
-		return format.WrapErr(err, "unable to push tags to origin")
+		return format.WrapErr(err, "unable to push tag %q to origin", tag)
 	}
 
 	plugin.ForCleanup(ctx, func() {

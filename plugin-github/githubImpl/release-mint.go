@@ -3,6 +3,7 @@ package githubImpl
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/go-github/v49/github"
 
@@ -48,24 +49,38 @@ func (s *ReleaseMintTask) CreateGithubPullRequest(ctx context.Context) error {
 		body = fmt.Sprintf("Pull request to complete release for v%s of project.", version)
 	}
 
-	_, _, err = s.Client().PullRequests.Create(ctx, owner, project, &github.NewPullRequest{
-		Title: github.String(prName),
-		Head:  github.String(branch),
-		Base:  github.String(git.GetPropertyGitTargetBranch(ctx)),
-		Body:  github.String(body),
-	})
+	targetBranch := git.GetPropertyGitTargetBranch(ctx)
+	logger := plugin.Logger(ctx,
+		"operation", "CreateGithubPullRequest",
+		"owner", owner,
+		"project", project,
+		"branch", branch,
+		"targetBranch", targetBranch,
+		"pullRequestName", prName,
+	)
+
+	for retries := 3; retries > 0; retries-- {
+		_, _, err = s.Client().PullRequests.Create(ctx, owner, project, &github.NewPullRequest{
+			Title: github.String(prName),
+			Head:  github.String(branch),
+			Base:  github.String(targetBranch),
+			Body:  github.String(body),
+		})
+
+		if err == nil {
+			break
+		}
+
+		logger.Info("failed to create pull request; retrying in 5s", "error", err)
+
+		<-time.After(5 * time.Second)
+	}
 
 	if err != nil {
 		return format.WrapErr(err, "unable to create pull request")
 	}
 
-	plugin.Logger(ctx,
-		"operation", "CreateGithubPullRequest",
-		"owner", owner,
-		"project", project,
-		"branch", branch,
-		"pullRequestName", prName,
-	).Info("Created Github pull request %q", prName)
+	logger.Info("Created Github pull request")
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -17,6 +18,7 @@ var depsCmd = &cobra.Command{
 // RunDepsForGoal returns a command runner for cobra that will report the
 // order of execution for the goal or subtask.
 func RunDepsForGoal(
+	ctx context.Context,
 	e *master.InterfaceExecutor,
 	phases []*group.Phase,
 ) func(*cobra.Command, []string) error {
