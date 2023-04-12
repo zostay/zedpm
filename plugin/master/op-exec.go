@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/pkg/group"
 	"github.com/zostay/zedpm/plugin"
@@ -41,6 +43,14 @@ func (s *SimpleExecutor) Execute(
 		NewSliceIterator[plugin.TaskDescription](s.tasks),
 		func(ctx context.Context, _ int, taskDesc plugin.TaskDescription) error {
 			taskName := taskDesc.Name()
+
+			logger := hclog.FromContext(ctx)
+			logger = logger.With(
+				"@operation", s.stageName,
+				"@task", taskName,
+			)
+			ctx = hclog.WithContext(ctx, logger)
+
 			task, err := s.exec.prepare(ctx, taskName)
 			if err != nil {
 				return format.WrapErr(err, "failed to prepare task %q", taskName)
@@ -75,8 +85,8 @@ func (c *CompletionExecutor) Execute(
 			task, err := c.exec.prepare(ctx, taskName)
 			if err != nil {
 				c.exec.logger.Error("unknown error while completing task",
-					"stage", "Complete",
-					"task", taskName,
+					"@operation", "Complete",
+					"@task", taskName,
 					"error", format.Err(err))
 				return err
 			}
@@ -85,8 +95,8 @@ func (c *CompletionExecutor) Execute(
 			err = c.exec.m.Complete(ctx, task)
 			if err != nil {
 				c.exec.logger.Error("failed while completing task due to error",
-					"stage", "Complete",
-					"task", taskName,
+					"@operation", "Complete",
+					"@task", taskName,
 					"error", format.Err(err))
 			}
 
@@ -123,6 +133,14 @@ func (s *StagedExecutor) prepareTasks(
 	tasks := make([]plugin.Task, 0, len(s.tasks))
 	for _, taskDesc := range s.tasks {
 		taskName := taskDesc.Name()
+
+		logger := hclog.FromContext(ctx)
+		logger = logger.With(
+			"@task", taskName,
+			"@operation", s.stageName,
+		)
+		ctx := hclog.WithContext(ctx, logger)
+
 		task, err := s.exec.prepare(ctx, taskName)
 		if err != nil {
 			err = fmt.Errorf("failed to prepare task %q: %w", taskName, err)
@@ -146,6 +164,14 @@ func (s *StagedExecutor) collateTasks(
 	ops := make(map[plugin.Ordering][]opInfo, 100)
 	for i, task := range tasks {
 		taskName := s.tasks[i].Name()
+
+		logger := hclog.FromContext(ctx)
+		logger = logger.With(
+			"@task", taskName,
+			"@operation", s.stageName,
+		)
+		ctx := hclog.WithContext(ctx, logger)
+
 		theseOps, err := s.prepare(task, ctx)
 		if err != nil {
 			err = fmt.Errorf("failed to prepare task %q: %w", taskName, err)
@@ -180,10 +206,18 @@ func (s *StagedExecutor) executeOperations(
 			err := RunTasksAndAccumulateErrors[int, opInfo](ctx,
 				NewSliceIterator[opInfo](stageOps),
 				func(ctx context.Context, _ int, opInfo opInfo) error {
+					taskName := opInfo.taskName
+					priStage := fmt.Sprintf("%s:%v", s.stageName, opInfo.op.Order)
+
+					logger := hclog.FromContext(ctx)
+					logger.With(
+						"@task", taskName,
+						"@operation", priStage,
+					)
+					ctx = hclog.WithContext(ctx, logger)
+
 					err := opInfo.op.Action.Call(ctx)
 					if err != nil {
-						priStage := fmt.Sprintf("%s:%v", s.stageName, opInfo.op.Order)
-						taskName := opInfo.taskName
 						err = fmt.Errorf("failed while executing stage %s of task %q: %w", priStage, taskName, err)
 						s.exec.tryCancel(ctx, taskName, opInfo.task, priStage)
 						s.exec.logFail(taskName, priStage, err)

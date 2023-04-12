@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -9,19 +10,20 @@ import (
 	"github.com/zostay/zedpm/plugin/master"
 )
 
-type CmdBuilder func(*master.InterfaceExecutor, []*group.Phase) func(*cobra.Command, []string) error
+type CmdBuilder func(context.Context, *master.InterfaceExecutor, []*group.Phase) func(*cobra.Command, []string) error
 
 // configureGoals goes through all goals for all available plugins and
 // configures the given runner for the given command as sub-commands named for
 // each "goal".
 func configureGoals(
+	ctx context.Context,
 	goals []*group.Goal,
 	e *master.InterfaceExecutor,
 	attachCmd *cobra.Command,
 	runner CmdBuilder,
 ) {
 	for _, goal := range goals {
-		goalCmd := configureGoalCommand(goal, e, runner)
+		goalCmd := configureGoalCommand(ctx, goal, e, runner)
 		attachCmd.AddCommand(goalCmd)
 	}
 }
@@ -31,13 +33,14 @@ func configureGoals(
 // as sub-commands named for each "goal", each "goal phase", and each "goal
 // phase task".
 func configureGoalsPhasesAndTasks(
+	ctx context.Context,
 	goals []*group.Goal,
 	e *master.InterfaceExecutor,
 	attachCmd *cobra.Command,
 	runner CmdBuilder,
 ) {
 	for _, goal := range goals {
-		goalCmd := configureGoalCommand(goal, e, runner)
+		goalCmd := configureGoalCommand(ctx, goal, e, runner)
 		attachCmd.AddCommand(goalCmd)
 
 		for _, phase := range goal.Phases {
@@ -45,7 +48,7 @@ func configureGoalsPhasesAndTasks(
 				continue
 			}
 
-			phaseCmd := configurePhaseCommand(phase, e, runner)
+			phaseCmd := configurePhaseCommand(ctx, phase, e, runner)
 			goalCmd.AddCommand(phaseCmd)
 
 			for _, task := range phase.InterleavedTasks {
@@ -53,7 +56,7 @@ func configureGoalsPhasesAndTasks(
 					continue
 				}
 
-				taskCmd := configureTaskCommand(task, e, runner)
+				taskCmd := configureTaskCommand(ctx, task, e, runner)
 				phaseCmd.AddCommand(taskCmd)
 			}
 		}
@@ -63,6 +66,7 @@ func configureGoalsPhasesAndTasks(
 // configureTaskCommand builds and returns the configuration for a single
 // subcommand for a given subtask.
 func configureTaskCommand(
+	ctx context.Context,
 	task *group.Task,
 	e *master.InterfaceExecutor,
 	runner CmdBuilder,
@@ -70,7 +74,7 @@ func configureTaskCommand(
 	return &cobra.Command{
 		Use:   task.Name,
 		Short: task.Short(),
-		RunE: runner(e, []*group.Phase{
+		RunE: runner(ctx, e, []*group.Phase{
 			{InterleavedTasks: []*group.Task{task}},
 		}),
 	}
@@ -79,6 +83,7 @@ func configureTaskCommand(
 // configurePhaseCommand builds and returns the configuration for a single
 // subcommand for a given phase.
 func configurePhaseCommand(
+	ctx context.Context,
 	phase *group.Phase,
 	e *master.InterfaceExecutor,
 	runner CmdBuilder,
@@ -86,13 +91,14 @@ func configurePhaseCommand(
 	return &cobra.Command{
 		Use:   phase.Name,
 		Short: phase.Short(),
-		RunE:  runner(e, []*group.Phase{phase}),
+		RunE:  runner(ctx, e, []*group.Phase{phase}),
 	}
 }
 
 // configureGoalCommand builds and returns the configuration for a single
 // subcommand for a given goal.
 func configureGoalCommand(
+	ctx context.Context,
 	goal *group.Goal,
 	e *master.InterfaceExecutor,
 	runner CmdBuilder,
@@ -101,6 +107,6 @@ func configureGoalCommand(
 		Use:     goal.Name,
 		Short:   goal.Short(),
 		Aliases: goal.Aliases(),
-		RunE:    runner(e, goal.ExecutionPhases()),
+		RunE:    runner(ctx, e, goal.ExecutionPhases()),
 	}
 }
