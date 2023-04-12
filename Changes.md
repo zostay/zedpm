@@ -1,6 +1,11 @@
 WIP  TBD
 
  * Improved error messages in plugin-git.
+ * Added a better UI for tracking progress of a goal.
+ * Added the --log-level option to all commands to adjust logging level.
+ * Added the --log-file option to enable raw logs to file.
+ * Added the --progress option to let the end-user disable the new UI and see 
+   raw logs instead.
 
 v0.0.0  2023-03-29
 
