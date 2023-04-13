@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/zostay/go-std/generic"
 )
@@ -38,6 +39,7 @@ type phase struct {
 }
 
 type Progress struct {
+	term         *Terminal
 	state        *State
 	phases       []phase
 	widgets      map[string]WidgetID
@@ -47,16 +49,16 @@ type Progress struct {
 }
 
 func NewProgress(tty *os.File) *Progress {
-	term := NewTerminal(tty)
-	state := NewState(term, defaultWidgetCount)
 	return &Progress{
-		state:        state,
+		term:         NewTerminal(tty),
 		currentPhase: -1,
 		widgets:      make(map[string]WidgetID, defaultWidgetCount),
 	}
 }
 
 func (p *Progress) SetPhases(phases []string) {
+	p.state = NewState(p.term, defaultWidgetCount)
+
 	p.phases = make([]phase, len(phases))
 	for i, name := range phases {
 		p.phases[i].status = phasePending
@@ -77,7 +79,15 @@ func (p *Progress) SetPhases(phases []string) {
 	p.UpdateProgress()
 }
 
+func (p *Progress) HasPhases() bool {
+	return p.state != nil
+}
+
 func (p *Progress) StartPhase(phase int, taskCount int) {
+	if p.state == nil {
+		panic("cannot call StartPhase before SetPhases")
+	}
+
 	for i := 0; i < phase; i++ {
 		p.phases[i].operation = ""
 		p.phases[i].status = phaseComplete
@@ -107,6 +117,10 @@ func (p *Progress) StartPhase(phase int, taskCount int) {
 }
 
 func (p *Progress) RegisterTask(name, short string) {
+	if p.state == nil {
+		panic("cannot call RegisterTask before SetPhases")
+	}
+
 	p.short[name] = short
 	w := p.state.AddWidget(p.TaskWidgetSize())
 	p.widgets[name] = w
@@ -120,6 +134,10 @@ func (p *Progress) RegisterTask(name, short string) {
 }
 
 func (p *Progress) UpdateProgress() {
+	if p.state == nil {
+		return
+	}
+
 	var stop int
 	phaseEnd := len(p.phases) - 1
 	currentPhase := generic.Max(0, p.currentPhase)
@@ -162,7 +180,47 @@ func (p *Progress) TaskWidgetSize() int {
 	return standardWidgetSize
 }
 
-func (p *Progress) Log(taskName string, op string, line string) {
+func (p *Progress) Log(
+	name,
+	level,
+	message string,
+	args ...any,
+) {
+	argStr := &strings.Builder{}
+	key := ""
+	for i, v := range args {
+		if i%2 == 0 {
+			key = fmt.Sprintf("%v", v)
+		} else {
+			if i >= 2 {
+				_, _ = fmt.Fprint(argStr, " ")
+			}
+			_, _ = fmt.Fprintf(argStr, "%s=%s", key, v)
+		}
+	}
+
+	if len(args)%2 == 1 {
+		if len(args) > 1 {
+			_, _ = fmt.Fprint(argStr, " ")
+		}
+		_, _ = fmt.Fprintf(argStr, "_=%s", key)
+	}
+
+	line := fmt.Sprintf("%10s / %-6s : %s [%s]", name, level, message, argStr.String())
+
+	if p.state == nil {
+		p.term.Println(line)
+		return
+	}
+
+	p.state.Log(line)
+}
+
+func (p *Progress) TaskLog(taskName string, op string, line string) {
+	if p.state == nil {
+		panic("cannot call TaskLog before SetPhases")
+	}
+
 	short := p.short[taskName]
 	w := p.widgets[taskName]
 	if p.compact {
@@ -180,5 +238,7 @@ func (p *Progress) Log(taskName string, op string, line string) {
 }
 
 func (p *Progress) Close() {
-	p.state.Close()
+	if p.state != nil {
+		p.state.Close()
+	}
 }

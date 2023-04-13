@@ -12,6 +12,7 @@ import (
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/plugin/master"
 	"github.com/zostay/zedpm/plugin/metal"
+	"github.com/zostay/zedpm/ui"
 )
 
 var (
@@ -20,8 +21,7 @@ var (
 		Short: "The Golang project management tool with the power to save the galaxy.",
 	}
 
-	logger        hclog.InterceptLogger
-	screenAdapter hclog.SinkAdapter
+	progress *ui.Progress
 )
 
 func init() {
@@ -31,22 +31,52 @@ func init() {
 
 	rootCmd.PersistentFlags().StringP("log-file", "o", "", "send the raw log to this file")
 	rootCmd.PersistentFlags().StringP("log-level", "l", "info", "set the log level to use [trace, debug, info, warn, error]")
-}
-
-var levelMap = map[string]hclog.Level{
-	"trace": hclog.Trace,
-	"debug": hclog.Debug,
-	"info":  hclog.Info,
-	"warn":  hclog.Warn,
-	"error": hclog.Error,
+	rootCmd.PersistentFlags().Bool("progress", true, "show the progress UI rather than the raw log")
 }
 
 func logLevel() hclog.Level {
 	l, _ := rootCmd.PersistentFlags().GetString("log-level")
-	if level, hasLevel := levelMap[l]; hasLevel {
+	level := hclog.LevelFromString(l)
+	if level != hclog.NoLevel {
 		return level
 	}
 	return hclog.Info
+}
+
+// ProgressAdapter sends logs to the progress.
+type ProgressAdapter struct {
+	progress *ui.Progress
+}
+
+func (p *ProgressAdapter) Accept(
+	name string,
+	level hclog.Level,
+	msg string,
+	args ...any,
+) {
+	if p.progress.HasPhases() {
+		var task, op string
+		for i := 0; i < len(args); i += 2 {
+			if i+1 >= len(args) {
+				break
+			}
+
+			switch args[i] {
+			case "@task":
+				task = fmt.Sprintf("%v", args[i+1])
+			case "@operation":
+				op = fmt.Sprintf("%v", args[i+1])
+			}
+
+			if op != "" && task != "" {
+				break
+			}
+		}
+
+		p.progress.TaskLog(task, op, msg)
+	} else {
+		p.progress.Log(name, level.String(), msg, args)
+	}
 }
 
 // Execute locates and loads configuration, loads the configured plugins, sets
@@ -67,6 +97,21 @@ func Execute() {
 		Level: stdLvl,
 	})
 
+	useProgress, _ := rootCmd.Flags().GetBool("progress")
+	if useProgress {
+		progress = ui.NewProgress(os.Stdout)
+		progressAdapter := &ProgressAdapter{progress}
+
+		logger.RegisterSink(progressAdapter)
+	} else {
+		screenAdapter := hclog.NewSinkAdapter(&hclog.LoggerOptions{
+			Level:  lvl,
+			Output: stdErr,
+		})
+
+		logger.RegisterSink(screenAdapter)
+	}
+
 	logFile, _ := rootCmd.PersistentFlags().GetString("log-file")
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND, 0x644)
@@ -81,13 +126,6 @@ func Execute() {
 
 		logger.RegisterSink(fileLog)
 	}
-
-	screenAdapter = hclog.NewSinkAdapter(&hclog.LoggerOptions{
-		Level:  lvl,
-		Output: stdErr,
-	})
-
-	logger.RegisterSink(screenAdapter)
 
 	plugins, err := metal.LoadPlugins(logger, cfg, stdOut, stdErr)
 	if err != nil {
