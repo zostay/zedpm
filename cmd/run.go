@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"path"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/zostay/zedpm/pkg/group"
 	"github.com/zostay/zedpm/plugin/master"
@@ -37,9 +38,10 @@ func RunGoal(
 		values, _ := cmd.Flags().GetStringToString("define")
 		e.Define(values)
 
+		caser := cases.Title(language.AmericanEnglish)
 		phaseNames := make([]string, len(phases))
 		for i, phase := range phases {
-			phaseNames[i] = phase.Name
+			phaseNames[i] = caser.String(phase.Name)
 		}
 
 		if progress != nil {
@@ -50,14 +52,17 @@ func RunGoal(
 			if progress != nil {
 				progress.StartPhase(i, len(phase.Tasks()))
 				for _, task := range phase.Tasks() {
-					progress.RegisterTask(task.Name(), task.Short())
+					progress.RegisterTask(task.Name(), caser.String(path.Base(task.Name())))
 				}
 			}
+		}
 
-			err := e.ExecutePhase(ctx, phase)
+		phasePlan := e.PreparePhasePlan(phases)
+		for phasePlan.NextPhase() {
+			err := phasePlan.ExecutePhase(ctx)
 			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "failed to execute phase %q: %v\n", phase.Name, err)
-				os.Exit(1)
+				logger.Error("failed to execute phase", "phase", phasePlan.CurrentPhase().Name, "error", err)
+				exitStatus = 1
 			}
 		}
 

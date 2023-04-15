@@ -49,8 +49,7 @@ type Terminal struct {
 }
 
 // NewTerminal creates a Terminal object for the given terminal and returns a
-// pointer to that object. It will immediately test whether the given file
-// handle represents a TTY and disable TTY functionality if it is not.
+// pointer to that object.
 func NewTerminal(tty *os.File) *Terminal {
 	t := &Terminal{ty: tty}
 	t.detectTTY()
@@ -86,44 +85,29 @@ func (t *Terminal) sigwinch() {
 	}
 }
 
-// MoveUp will move the cursor up n rows on-screen. If the terminal is not a
-// TTY, this method does nothing.
+// MoveUp will move the cursor up n rows on-screen.
 func (t *Terminal) MoveUp(n int) {
-	if t.istty {
-		_, _ = fmt.Fprintf(t.ty, "\x1b[%dA", n)
-	}
+	_, _ = fmt.Fprintf(t.ty, "\x1b[%dA", n)
 }
 
-// ClearLine will clear the row the cursor is currently on. If the terminal is
-// not a TTY, this method does nothing.
+// ClearLine will clear the row the cursor is currently on.
 func (t *Terminal) ClearLine() {
-	if t.istty {
-		_, _ = fmt.Fprint(t.ty, "\x1b[2K")
-	}
+	_, _ = fmt.Fprint(t.ty, "\x1b[2K")
 }
 
-// ClearLines will clear n lines below the row the cursor is currently on. If
-// the terminal is not a TTY, this method does nothing.
+// ClearLines will clear n lines below the row the cursor is currently on.
 func (t *Terminal) ClearLines(n int) {
-	if t.istty {
-		_, _ = fmt.Fprint(t.ty, strings.Repeat("\x1b[2K\n", n))
-	}
+	_, _ = fmt.Fprint(t.ty, strings.Repeat("\x1b[2K\n", n))
 }
 
-// AddLines will move the cursor down n lines. If the terminal is not a TTY,
-// this method does nothing.
+// AddLines will move the cursor down n lines.
 func (t *Terminal) AddLines(n int) {
-	if t.istty {
-		_, _ = fmt.Fprint(t.ty, strings.Repeat("\n", n))
-	}
+	_, _ = fmt.Fprint(t.ty, strings.Repeat("\n", n))
 }
 
 // Println will write a single line to the screen. This will blank any existing
 // data on the current line before writing and will move the cursor down one
 // line afterward.
-//
-// If the terminal is not a TTY, this function does not clear lines, but just
-// writes them and moves the cursor down a line.
 func (t *Terminal) Println(line string) {
 	t.ClearLine()
 	_, _ = fmt.Fprintln(t.ty, line)
@@ -134,9 +118,6 @@ func (t *Terminal) Println(line string) {
 // will also truncate the line so it is not longer than the terminal width. This
 // will blank any existing data on the current line before writing and will move
 // the cursor down one line afterward.
-//
-// If the terminal is not a TTY, this function does not clear lines, but just
-// writes them and moves the cursor down a line.
 func (t *Terminal) WriteLine(line string) {
 	t.ClearLine()
 	line = strings.ReplaceAll(line, "\n", "\u2424")

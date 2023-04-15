@@ -145,7 +145,7 @@ func (s *StagedExecutor) prepareTasks(
 		if err != nil {
 			err = fmt.Errorf("failed to prepare task %q: %w", taskName, err)
 			s.exec.tryCancel(ctx, taskName, task, s.stageName)
-			s.exec.logFail(taskName, s.stageName, err)
+			s.exec.logFail(ctx, taskName, s.stageName, err)
 			return nil, err
 		}
 
@@ -176,7 +176,7 @@ func (s *StagedExecutor) collateTasks(
 		if err != nil {
 			err = fmt.Errorf("failed to prepare task %q: %w", taskName, err)
 			s.exec.tryCancel(ctx, taskName, task, s.stageName)
-			s.exec.logFail(taskName, s.stageName, err)
+			s.exec.logFail(ctx, taskName, s.stageName, err)
 			return nil, err
 		}
 
@@ -220,7 +220,7 @@ func (s *StagedExecutor) executeOperations(
 					if err != nil {
 						err = fmt.Errorf("failed while executing stage %s of task %q: %w", priStage, taskName, err)
 						s.exec.tryCancel(ctx, taskName, opInfo.task, priStage)
-						s.exec.logFail(taskName, priStage, err)
+						s.exec.logFail(ctx, taskName, priStage, err)
 						return err
 					}
 					return nil

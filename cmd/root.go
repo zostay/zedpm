@@ -3,11 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
-	"github.com/zostay/go-std/generic"
 
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/plugin/master"
@@ -21,7 +21,9 @@ var (
 		Short: "The Golang project management tool with the power to save the galaxy.",
 	}
 
-	progress *ui.Progress
+	progress   *ui.Progress
+	logger     hclog.InterceptLogger
+	exitStatus int
 )
 
 func init() {
@@ -43,74 +45,31 @@ func logLevel() hclog.Level {
 	return hclog.Info
 }
 
-// ProgressAdapter sends logs to the progress.
-type ProgressAdapter struct {
-	progress *ui.Progress
-}
-
-func (p *ProgressAdapter) Accept(
-	name string,
-	level hclog.Level,
-	msg string,
-	args ...any,
-) {
-	if p.progress.HasPhases() {
-		var task, op string
-		for i := 0; i < len(args); i += 2 {
-			if i+1 >= len(args) {
-				break
-			}
-
-			switch args[i] {
-			case "@task":
-				task = fmt.Sprintf("%v", args[i+1])
-			case "@operation":
-				op = fmt.Sprintf("%v", args[i+1])
-			}
-
-			if op != "" && task != "" {
-				break
-			}
-		}
-
-		p.progress.TaskLog(task, op, msg)
-	} else {
-		p.progress.Log(name, level.String(), msg, args)
-	}
-}
-
 // Execute locates and loads configuration, loads the configured plugins, sets
 // up the root command, and attaches the various run subcommands.
-func Execute() {
+func Execute() int {
 	cfg, err := config.LocateAndLoad()
 	if err != nil {
 		panic(fmt.Sprintf("zedpm failed to load: %v\n", err))
 	}
 
-	stdOut := metal.NewSyncBuffer(os.Stdout)
-	stdErr := metal.NewSyncBuffer(os.Stderr)
+	var stdOut io.Writer = metal.NewSyncBuffer(os.Stdout)
+	var stdErr io.Writer = metal.NewSyncBuffer(os.Stderr)
 
 	lvl := logLevel()
-	stdLvl := generic.Min(hclog.Info, lvl)
-	logger := hclog.NewInterceptLogger(&hclog.LoggerOptions{
+	logger = hclog.NewInterceptLogger(&hclog.LoggerOptions{
 		Name:  "zedpm",
-		Level: stdLvl,
+		Level: hclog.Off,
 	})
 
-	useProgress, _ := rootCmd.Flags().GetBool("progress")
-	if useProgress {
-		progress = ui.NewProgress(os.Stdout)
-		progressAdapter := &ProgressAdapter{progress}
+	progress = ui.NewProgress(os.Stdout)
+	defer progress.Close()
+	progressAdapter := ui.NewSinkAdapter(progress)
 
-		logger.RegisterSink(progressAdapter)
-	} else {
-		screenAdapter := hclog.NewSinkAdapter(&hclog.LoggerOptions{
-			Level:  lvl,
-			Output: stdErr,
-		})
+	stdOut = ui.NewWriter("zedpm", "info", progress)
+	stdErr = ui.NewWriter("zedpm", "error", progress)
 
-		logger.RegisterSink(screenAdapter)
-	}
+	logger.RegisterSink(progressAdapter)
 
 	logFile, _ := rootCmd.PersistentFlags().GetString("log-file")
 	if logFile != "" {
@@ -153,4 +112,6 @@ func Execute() {
 
 	err = rootCmd.Execute()
 	cobra.CheckErr(err)
+
+	return exitStatus
 }

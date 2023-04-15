@@ -1,9 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/zostay/zedpm/cmd"
 )
 
 func main() {
-	cmd.Execute()
+	exitStatus := cmd.Execute()
+	os.Exit(exitStatus)
 }

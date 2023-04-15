@@ -47,6 +47,9 @@ func IsDirty(status git.Status) bool {
 // CheckGitCleanliness ensures that the current git repository is clean and that
 // we are on the correct branch from which to trigger a release.
 func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
+	logger := plugin.Logger(ctx, "operation", "CheckGitCleanliness")
+	logger.Info("Finding the HEAD reference")
+
 	headRef, err := s.Repository().Head()
 	if err != nil {
 		return format.WrapErr(err, "unable to find HEAD")
@@ -55,6 +58,9 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 	if headRef.Name() != zGit.TargetBranchRefName(ctx) {
 		return fmt.Errorf("you must checkout %s to release", zGit.TargetBranch(ctx))
 	}
+
+	logger = logger.With("headRef", headRef.String())
+	logger.Info("Finding the remote master reference")
 
 	remoteRefs, err := s.Remote().List(&git.ListOptions{})
 	if err != nil {
@@ -69,9 +75,14 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 		}
 	}
 
+	logger = logger.With("masterRef", masterRef.String())
+	logger.Info("Checking if local master reference matches remote")
+
 	if headRef.Hash() != masterRef.Hash() {
 		return fmt.Errorf("local copy differs from remote, you need to push or pull")
 	}
+
+	logger.Info("Checking that the local copy is clean")
 
 	stat, err := s.Worktree().Status()
 	if err != nil {
@@ -83,11 +94,7 @@ func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
 		return fmt.Errorf("your working copy is dirty")
 	}
 
-	plugin.Logger(ctx,
-		"operation", "CheckGitCleanliness",
-		"headRef", headRef,
-		"masterRef", masterRef,
-	).Info("Git working tree is clean for release.")
+	logger.Info("Git working tree is clean for release")
 
 	return nil
 }

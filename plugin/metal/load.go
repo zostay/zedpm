@@ -2,6 +2,7 @@ package metal
 
 import (
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 
@@ -11,8 +12,6 @@ import (
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
-	"github.com/zostay/zedpm/plugin-changelog/changelogImpl"
-	"github.com/zostay/zedpm/plugin-git/gitImpl"
 )
 
 // runPluginServerLocally is a variable that can be configured to replace or add
@@ -21,9 +20,9 @@ import (
 //
 // TODO This is a cheap debugging aid, but should be made nicer and configgable somehow for debugging those sticky problems.
 var runPluginServerLocally = map[string]plugin.Interface{
-	"changelog": &changelogImpl.Plugin{},
+	// "changelog": &changelogImpl.Plugin{},
 	// "github": &githubImpl.Plugin{},
-	"git": &gitImpl.Plugin{},
+	// "git": &gitImpl.Plugin{},
 }
 
 // Clients represents a list of Hashicorp plugins we are running to implement
@@ -41,8 +40,8 @@ const devModePluginPrefix = "go run "
 func LoadLocalPlugin(
 	iface plugin.Interface,
 	logger hclog.Logger,
-	stdOut *SyncBuffer,
-	stdErr *SyncBuffer,
+	stdOut io.Writer,
+	stdErr io.Writer,
 ) (*goPlugin.Client, error) {
 	reattach := make(chan *goPlugin.ReattachConfig)
 	go func() {
@@ -55,6 +54,7 @@ func LoadLocalPlugin(
 				"task-interface": NewPlugin(logger, iface),
 			},
 			GRPCServer: goPlugin.DefaultGRPCServer,
+			Logger:     logger,
 		})
 	}()
 
@@ -82,8 +82,8 @@ func LoadDevModePlugin(
 	cfg *config.Config,
 	pcfg *config.PluginConfig,
 	logger hclog.Logger,
-	stdOut *SyncBuffer,
-	stdErr *SyncBuffer,
+	stdOut io.Writer,
+	stdErr io.Writer,
 ) (*goPlugin.Client, error) {
 	if !cfg.Properties.GetBool("DEV_MODE") {
 		return nil, fmt.Errorf("plugin configuration has plugins in development, but DEV_MODE is not set to true")
@@ -99,8 +99,8 @@ func LoadDevModePlugin(
 func NewGoPluginClient(
 	cmd []string,
 	logger hclog.Logger,
-	stdOut *SyncBuffer,
-	stdErr *SyncBuffer,
+	stdOut io.Writer,
+	stdErr io.Writer,
 ) *goPlugin.Client {
 	client := goPlugin.NewClient(&goPlugin.ClientConfig{
 		HandshakeConfig: Handshake,
@@ -122,8 +122,8 @@ func NewGoPluginClient(
 func LoadPlugins(
 	logger hclog.Logger,
 	cfg *config.Config,
-	stdOut *SyncBuffer,
-	stdErr *SyncBuffer,
+	stdOut io.Writer,
+	stdErr io.Writer,
 ) (Clients, error) {
 	clients := make(Clients, len(cfg.Plugins))
 	for i := range cfg.Plugins {

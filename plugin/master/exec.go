@@ -2,6 +2,7 @@ package master
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -68,11 +69,13 @@ func (e *InterfaceExecutor) tryCancel(
 
 // logFail logs the information related to a task execution failure.
 func (e *InterfaceExecutor) logFail(
+	ctx context.Context,
 	taskName string,
 	stage string,
 	err error,
 ) {
-	e.logger.Error("task failed",
+	logger := hclog.FromContext(ctx)
+	logger.Error("task failed",
 		"stage", stage,
 		"task", taskName,
 		"error", format.Err(err))
@@ -89,7 +92,7 @@ func (e *InterfaceExecutor) prepare(
 		if task != nil {
 			e.tryCancel(ctx, taskName, task, "Prepare")
 		}
-		e.logFail(taskName, "Prepare", err)
+		e.logFail(ctx, taskName, "Prepare", err)
 		return nil, err
 	}
 	return task, nil
@@ -110,22 +113,86 @@ func finalTaskName(ctx context.Context) string {
 	return ctx.Value(finalTaskNameKey{}).(string)
 }
 
-// ExecuteGoal executes all the tasks in a goal. Tasks are grouped into phases.
+// PhasePlan contains a set of phases to run and be executed.
+type PhasePlan struct {
+	e        *InterfaceExecutor
+	phases   []*group.Phase
+	current  int
+	phaseRan bool
+	err      error
+}
+
+// NextPhase will move on to the next phase. It must be called before each
+// phase. Failing to call this between phases will cause an error. Returns false
+// when there are no more phases to run.
+func (p *PhasePlan) NextPhase() bool {
+	if p.err == nil && p.current+1 < len(p.phases) {
+		p.phaseRan = false
+		p.current++
+		return true
+	}
+
+	return false
+}
+
+// CurrentPhase returns information for the current phase. This may only be
+// called after NextPhase has been called.
+func (p *PhasePlan) CurrentPhase() *group.Phase {
+	return p.phases[p.current]
+}
+
+// ExecutePhase will execute the next phase. It returns an error if the
+// phase fails. If an error occurs, this will only return an error from then on.
+func (p *PhasePlan) ExecutePhase(
+	ctx context.Context,
+) error {
+	if p.current < 0 {
+		return fmt.Errorf("attempt to execute a phase that does not exist or without calling NextPhase")
+	}
+
+	if p.err != nil {
+		return p.err
+	}
+
+	if p.phaseRan {
+		return fmt.Errorf("this phase already ran; you cannot run the same phase again")
+	}
+
+	p.phaseRan = true
+
+	phase := p.phases[p.current]
+
+	logger := hclog.FromContext(ctx)
+	ctx = hclog.WithContext(ctx, logger, "phase", phase.Name)
+	err := p.e.executePhase(ctx, phase)
+
+	if err != nil {
+		p.err = err
+	}
+
+	return err
+}
+
+// PrepareGoalPlan executes all the tasks in a goal. Tasks are grouped into phases.
 // Each phase is run one at a time in order. These may be executed concurrently.
 // The tasks within each phase are run simultaneously and interleaved (with
 // individual operations sometimes running concurrently).
-func (e *InterfaceExecutor) ExecuteGoal(
-	ctx context.Context,
+func (e *InterfaceExecutor) PrepareGoalPlan(
 	goal *group.Goal,
-) error {
+) *PhasePlan {
 	phases := goal.ExecutionPhases()
+	return e.PreparePhasePlan(phases)
+}
 
-	for _, phase := range phases {
-		err := e.ExecutePhase(ctx, phase)
-		return err
+// PreparePhasePlan executes all the tasks related to the listed phases.
+func (e *InterfaceExecutor) PreparePhasePlan(
+	phases []*group.Phase,
+) *PhasePlan {
+	return &PhasePlan{
+		e:       e,
+		phases:  phases,
+		current: -1,
 	}
-
-	return nil
 }
 
 // ExecutePhase executes all the tasks in a phase. Tasks in a phase are executed
@@ -138,7 +205,7 @@ func (e *InterfaceExecutor) ExecuteGoal(
 // run, again in priority order. And then the operations of the end phase are
 // run in priority order. Finally, the tasks are finished and torn down
 // concurrently.
-func (e *InterfaceExecutor) ExecutePhase(
+func (e *InterfaceExecutor) executePhase(
 	ctx context.Context,
 	phase *group.Phase,
 ) error {

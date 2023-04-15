@@ -45,7 +45,7 @@ type Progress struct {
 	widgets      map[string]WidgetID
 	currentPhase int
 	compact      bool
-	short        map[string]string
+	title        map[string]string
 }
 
 func NewProgress(tty *os.File) *Progress {
@@ -107,27 +107,27 @@ func (p *Progress) StartPhase(phase int, taskCount int) {
 	p.currentPhase = phase
 	if taskCount == 0 {
 		p.compact = true
-		p.short = map[string]string{}
+		p.title = map[string]string{}
 	} else {
 		p.compact = (p.state.term.Height()-9)/taskCount < standardWidgetSize
-		p.short = make(map[string]string, taskCount)
+		p.title = make(map[string]string, taskCount)
 	}
 
 	p.UpdateProgress()
 }
 
-func (p *Progress) RegisterTask(name, short string) {
+func (p *Progress) RegisterTask(name, title string) {
 	if p.state == nil {
 		panic("cannot call RegisterTask before SetPhases")
 	}
 
-	p.short[name] = short
+	p.title[name] = title
 	w := p.state.AddWidget(p.TaskWidgetSize())
 	p.widgets[name] = w
 	if p.compact {
-		p.state.Set(w, 0, short+": ...")
+		p.state.Set(w, 0, title+": ...")
 	} else {
-		p.state.SetTitle(w, short)
+		p.state.SetTitle(w, title)
 	}
 
 	p.UpdateProgress()
@@ -186,51 +186,74 @@ func (p *Progress) Log(
 	message string,
 	args ...any,
 ) {
-	argStr := &strings.Builder{}
-	key := ""
-	for i, v := range args {
-		if i%2 == 0 {
-			key = fmt.Sprintf("%v", v)
-		} else {
-			if i >= 2 {
+	argsBlock := ""
+	if len(args) > 0 {
+		argStr := &strings.Builder{}
+		key := ""
+		for i, v := range args {
+			if i%2 == 0 {
+				key = fmt.Sprintf("%v", v)
+			} else {
+				if i >= 2 {
+					_, _ = fmt.Fprint(argStr, " ")
+				}
+				_, _ = fmt.Fprintf(argStr, "%s=%v", key, v)
+			}
+		}
+
+		if len(args)%2 == 1 {
+			if len(args) > 1 {
 				_, _ = fmt.Fprint(argStr, " ")
 			}
-			_, _ = fmt.Fprintf(argStr, "%s=%s", key, v)
+			_, _ = fmt.Fprintf(argStr, "_=%s", key)
+		}
+
+		argsBlock = fmt.Sprintf(" [%s]", argStr.String())
+	}
+
+	var task, op string
+	if p.state != nil {
+		for i := 0; i < len(args); i += 2 {
+			if i+1 >= len(args) {
+				break
+			}
+
+			switch args[i] {
+			case "@task":
+				task = fmt.Sprintf("%v", args[i+1])
+			case "@operation":
+				op = fmt.Sprintf("%v", args[i+1])
+			}
+
+			if op != "" && task != "" {
+				break
+			}
 		}
 	}
 
-	if len(args)%2 == 1 {
-		if len(args) > 1 {
-			_, _ = fmt.Fprint(argStr, " ")
-		}
-		_, _ = fmt.Fprintf(argStr, "_=%s", key)
-	}
-
-	line := fmt.Sprintf("%10s / %-6s : %s [%s]", name, level, message, argStr.String())
+	line := fmt.Sprintf("%12s / %-6s : %s%s", name, level, message, argsBlock)
 
 	if p.state == nil {
 		p.term.Println(line)
 		return
 	}
 
+	if task != "" {
+		p.taskLog(task, op, fmt.Sprintf("%s %s", level, message))
+	}
+
 	p.state.Log(line)
 }
 
-func (p *Progress) TaskLog(taskName string, op string, line string) {
-	if p.state == nil {
-		panic("cannot call TaskLog before SetPhases")
-	}
-
-	short := p.short[taskName]
+func (p *Progress) taskLog(taskName string, op string, line string) {
+	title := p.title[taskName]
 	w := p.widgets[taskName]
 	if p.compact {
-		p.state.Set(w, 0, short+": "+line)
+		p.state.Set(w, 0, title+": "+line)
 		p.state.LogWidget(-1, line)
 	} else {
 		p.state.LogWidget(w, line)
 	}
-
-	p.state.Log(fmt.Sprintf("%10s / %-6s : %s", short, op, line))
 
 	p.phases[p.currentPhase].operation = op
 
@@ -240,5 +263,6 @@ func (p *Progress) TaskLog(taskName string, op string, line string) {
 func (p *Progress) Close() {
 	if p.state != nil {
 		p.state.Close()
+		p.state = nil
 	}
 }
