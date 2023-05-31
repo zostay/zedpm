@@ -6,6 +6,7 @@ WIP  TBD
  * Added the --log-file option to enable raw logs to file.
  * Added the --progress option to let the end-user disable the new UI and see 
    raw logs instead.
+ * Fix: zedpm run release now completes the final release tag push properly.
 
 v0.0.0  2023-03-29
 
