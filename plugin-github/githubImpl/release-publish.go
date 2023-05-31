@@ -225,14 +225,14 @@ func (f *ReleasePublishTask) CreateRelease(ctx context.Context) error {
 }
 
 // Run configures MergePullRequest and CreateRelease to run.
-func (f *ReleasePublishTask) Run(context.Context) (plugin.Operations, error) {
+func (f *ReleasePublishTask) End(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{
-			Order:  70,
+			Order:  60,
 			Action: plugin.OperationFunc(f.MergePullRequest),
 		},
 		{
-			Order:  75,
+			Order:  80,
 			Action: plugin.OperationFunc(f.CreateRelease),
 		},
 	}, nil

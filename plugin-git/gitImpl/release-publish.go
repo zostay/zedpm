@@ -87,7 +87,7 @@ func (f *ReleasePublishTask) TagRelease(ctx context.Context) error {
 func (f *ReleasePublishTask) End(context.Context) (plugin.Operations, error) {
 	return plugin.Operations{
 		{
-			Order:  75,
+			Order:  70,
 			Action: plugin.OperationFunc(f.TagRelease),
 		},
 	}, nil
