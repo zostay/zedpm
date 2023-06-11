@@ -3,6 +3,8 @@ package ui
 import (
 	"strings"
 	"unicode/utf8"
+
+	"github.com/zostay/zedpm/pkg/log"
 )
 
 const (
@@ -33,7 +35,7 @@ type State struct {
 // for capacity widgets, initially. Capacity will expand as needed.
 //
 // State manages the terminal in two basic sections separated by a boundary
-// line. Above the boundary line is a log. Below is zero or more widgets which
+// widgetLogLine. Above the boundary widgetLogLine is a log. Below is zero or more widgets which
 // are drawn and redrawn with every change.
 func NewState(term *Terminal, capacity int) *State {
 	s := &State{
@@ -46,20 +48,20 @@ func NewState(term *Terminal, capacity int) *State {
 	return s
 }
 
-// makeHeader puts a piece of text inside a line to make it stand out on screen.
-func (s *State) makeHeader(line string) string {
-	if utf8.RuneCountInString(line) > s.width-10 {
-		line = string([]rune(line)[:s.width-11]) + headerLineEllipsis
+// makeHeader puts a piece of text inside a widgetLogLine to make it stand out on screen.
+func makeHeader(line string, width int) string {
+	if utf8.RuneCountInString(line) > width-10 {
+		line = string([]rune(line)[:width-11]) + headerLineEllipsis
 	}
-	trailerLen := s.width - 5 - utf8.RuneCountInString(line)
+	trailerLen := width - 5 - utf8.RuneCountInString(line)
 	return strings.Repeat(headerLineLine, 4) + " " +
 		line + " " + strings.Repeat(headerLineLine, trailerLen)
 }
 
-// writeBoundary will write the boundary line inside a header to the screen at
+// writeBoundary will write the boundary widgetLogLine inside a header to the screen at
 // the current cursor position.
 func (s *State) writeBoundary() {
-	s.term.WriteLine(s.makeHeader(boundary))
+	s.term.WriteLine(makeHeader(boundary, s.width))
 }
 
 // resizeAndDraw will handle shrinkage or growth of the managed screen
@@ -80,9 +82,9 @@ func (s *State) resizeAndDraw(oldToBoundary int) {
 	s.draw("")
 }
 
-// draw will write the given log line, if any is given, and then will redraw the
+// draw will write the given log widgetLogLine, if any is given, and then will redraw the
 // entire state to the screen. This call assumes that the cursor has already
-// been moved to the location of the boundary line.
+// been moved to the location of the boundary widgetLogLine.
 func (s *State) draw(logLine string) {
 	if logLine != "" {
 		s.term.Println(logLine)
@@ -110,7 +112,7 @@ func (s *State) redraw(line string) {
 func (s *State) AddWidget(n int) WidgetID {
 	oldToBoundary := s.MovementsToBoundary()
 	s.serial++
-	s.widgets[s.serial] = newWidget(n)
+	s.widgets[s.serial] = newWidget(n, s.width)
 	s.order = append(s.order, s.serial)
 	s.resizeAndDraw(oldToBoundary)
 	return s.serial
@@ -136,14 +138,13 @@ func (s *State) Title(id WidgetID) string {
 	return s.widgets[id].Title()
 }
 
-// SetTitle sets the title line to use on a widget.
-func (s *State) SetTitle(id WidgetID, line string) {
-	line = s.makeHeader(line)
-	s.widgets[id].SetTitle(line)
+// SetTitle sets the title widgetLogLine to use on a widget.
+func (s *State) SetTitle(id WidgetID, title string) {
+	s.widgets[id].SetTitle(title)
 }
 
 // MovementsToBoundary states how many cursor movements are required to move the
-// cursor from the bottom of the on-screen State to the boundary line.
+// cursor from the bottom of the on-screen State to the boundary widgetLogLine.
 func (s *State) MovementsToBoundary() int {
 	l := 1
 	for _, w := range s.widgets {
@@ -172,18 +173,64 @@ func (s *State) LogWidget(id WidgetID, line string) {
 	s.redraw("")
 }
 
-// Set will set the value of a specific widget line to the given value. If the
-// widget given by the WidgetID does not exist, this method does nothing.
-func (s *State) Set(id WidgetID, n int, line string) {
+// Set will set the value of a specific widget widgetLogLine to the given value. If
+// the widget given by the WidgetID does not exist, this method does nothing. If
+// flags are given, the flags are immediately added to the line.
+func (s *State) Set(id WidgetID, n int, line string, flags ...string) {
 	if widget, widgetExists := s.widgets[id]; widgetExists {
 		widget.Set(n, line)
+		widget.addNFlags(n, flags...)
 		s.redraw("")
+	}
+}
+
+// SetStatus will set the status of a specific widget widgetLine. This does
+// nothing if the widget with the given ID does not exist. This will then redraw
+// the widget.
+func (s *State) SetStatus(
+	id WidgetID,
+	n int,
+	name string,
+	icon statusIcon,
+	op string,
+) {
+	if widget, widgetExists := s.widgets[id]; widgetExists {
+		widget.SetStatus(n, name, icon, op)
+		s.redraw("")
+	}
+}
+
+// SetActionKey assigns an action key to a line in a widget.
+func (s *State) SetActionKey(id WidgetID, n int, action string) {
+	if widget, widgetExists := s.widgets[id]; widgetExists {
+		widget.SetActionKey(n, action)
+	}
+}
+
+// SetOutcome assigns an outcome to a line in a widget.
+func (s *State) SetOutcome(id WidgetID, action string, outcome log.Outcome) {
+	if widget, widgetExists := s.widgets[id]; widgetExists {
+		widget.SetOutcome(action, outcome)
+	}
+}
+
+// AddFlags adds the given flags on a line of a widget.
+func (s *State) AddFlags(id WidgetID, action string, flags []string) {
+	if widget, widgetExists := s.widgets[id]; widgetExists {
+		widget.AddFlags(action, flags...)
+	}
+}
+
+// IncTick increments the tick count on a line of a widget.
+func (s *State) IncTick(id WidgetID, action string) {
+	if widget, widgetExists := s.widgets[id]; widgetExists {
+		widget.IncTick(action)
 	}
 }
 
 // Close should always be called before program termination or when the State
 // object is about to give up control of the terminal. This will erase all the
-// widgets and move the cursor to where the boundary line was, just below the
+// widgets and move the cursor to where the boundary widgetLogLine was, just below the
 // end of the log.
 func (s *State) Close() {
 	for len(s.widgets) > 0 {

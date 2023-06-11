@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/zostay/go-std/generic"
+
+	"github.com/zostay/zedpm/pkg/log"
 )
 
 const (
@@ -13,6 +15,8 @@ const (
 	standardWidgetSize = 4
 	compactWidgetSize  = 1
 )
+
+const progressWidget = ""
 
 type phaseStatus int
 
@@ -23,14 +27,15 @@ const (
 	phaseComplete             // green
 )
 
-const (
-	redCircle    = "\U0001f534"
-	yellowCircle = "\U0001f7e1"
-	greenCircle  = "\U0001f7e2"
-	purpleCircle = "\U0001f3e3"
+var (
+	defaultIcon  = purpleCircle
+	phaseIconMap = map[phaseStatus]statusIcon{
+		phaseUnknown:  purpleCircle,
+		phasePending:  redCircle,
+		phaseWorking:  yellowCircle,
+		phaseComplete: greenCircle,
+	}
 )
-
-const progressWidget = ""
 
 type phase struct {
 	status    phaseStatus
@@ -45,7 +50,6 @@ type Progress struct {
 	widgets      map[string]WidgetID
 	currentPhase int
 	compact      bool
-	title        map[string]string
 }
 
 func NewProgress(tty *os.File) *Progress {
@@ -107,10 +111,8 @@ func (p *Progress) StartPhase(phase int, taskCount int) {
 	p.currentPhase = phase
 	if taskCount == 0 {
 		p.compact = true
-		p.title = map[string]string{}
 	} else {
 		p.compact = (p.state.term.Height()-9)/taskCount < standardWidgetSize
-		p.title = make(map[string]string, taskCount)
 	}
 
 	p.UpdateProgress()
@@ -121,8 +123,8 @@ func (p *Progress) RegisterTask(name, title string) {
 		panic("cannot call RegisterTask before SetPhases")
 	}
 
-	p.title[name] = title
 	w := p.state.AddWidget(p.TaskWidgetSize())
+	p.state.SetTitle(w, title)
 	p.widgets[name] = w
 	if p.compact {
 		p.state.Set(w, 0, title+": ...")
@@ -152,24 +154,12 @@ func (p *Progress) UpdateProgress() {
 	pw := p.widgets[progressWidget]
 	for i := start; i <= stop; i++ {
 		ph := p.phases[i]
-
-		var status string
-		switch ph.status {
-		case phaseComplete:
-			status = greenCircle
-		case phaseWorking:
-			status = yellowCircle
-		case phasePending:
-			status = redCircle
-		case phaseUnknown:
-			status = purpleCircle
+		var icon statusIcon
+		var hasIcon bool
+		if icon, hasIcon = phaseIconMap[ph.status]; !hasIcon {
+			icon = defaultIcon
 		}
-
-		op := ""
-		if ph.operation != "" {
-			op = " [" + ph.operation + "]"
-		}
-		p.state.Set(pw, i-start, " "+status+" "+ph.name+op)
+		p.state.SetStatus(pw, i-start, ph.name, icon, ph.operation)
 	}
 }
 
@@ -180,6 +170,17 @@ func (p *Progress) TaskWidgetSize() int {
 	return standardWidgetSize
 }
 
+// Log will process a log widgetLogLine, typically by writing it to the screen. If
+// widgets are present, it will add the widgetLogLine to the appropriate widget. It will
+// also handle a number of special @<name> fields:
+//
+//	@task        - name of the task to log this with
+//	@operation   - the operation the task is performing
+//	@action      - an action key to identify some persistent state
+//	@actionFlags - flags to modify how the log is displayed (e.g., "spin" and
+//	               "autospin")
+//	@outcome     - outcome is the final outcome of an action
+//	@tick        - tick will cause a widgetLogLine with an associated "spin" flag to move
 func (p *Progress) Log(
 	name,
 	level,
@@ -211,7 +212,13 @@ func (p *Progress) Log(
 		argsBlock = fmt.Sprintf(" [%s]", argStr.String())
 	}
 
-	var task, op string
+	var (
+		task, op, action string
+		outcome          log.Outcome
+		skip             = false
+		tick             = false
+		actionFlags      []string
+	)
 	if p.state != nil {
 		for i := 0; i < len(args); i += 2 {
 			if i+1 >= len(args) {
@@ -223,6 +230,21 @@ func (p *Progress) Log(
 				task = fmt.Sprintf("%v", args[i+1])
 			case "@operation":
 				op = fmt.Sprintf("%v", args[i+1])
+			case "@actionFlags":
+				var isStringSlice bool
+				if actionFlags, isStringSlice = args[i+1].([]string); isStringSlice {
+					skip = true
+				}
+			case "@action":
+				if outcome == "" {
+					skip = true
+				}
+				action = fmt.Sprintf("%v", args[i+1])
+			case "@outcome":
+				outcome = log.Outcome(fmt.Sprintf("%v", args[i+1]))
+				skip = false
+			case "@tick":
+				tick = true
 			}
 
 			if op != "" && task != "" {
@@ -238,21 +260,39 @@ func (p *Progress) Log(
 		return
 	}
 
-	if task != "" {
-		p.taskLog(task, op, fmt.Sprintf("%s %s", level, message))
+	if !skip {
+		if task != "" {
+			p.taskLog(task, op, fmt.Sprintf("%s %s", level, message), action)
+		}
+
+		p.state.Log(line)
 	}
 
-	p.state.Log(line)
+	if task != "" {
+		if outcome != "" {
+			p.taskOutcome(task, action, outcome)
+		}
+		if actionFlags != nil {
+			p.taskAddFlags(task, action, actionFlags)
+		}
+		if tick {
+			p.taskTick(task, action)
+		}
+	}
 }
 
-func (p *Progress) taskLog(taskName string, op string, line string) {
-	title := p.title[taskName]
+// taskLog will log the given message widgetLogLine to the widget for taskName and update
+// the operation to the given op.
+func (p *Progress) taskLog(taskName string, op string, line string, action string) {
 	w := p.widgets[taskName]
+	title := p.state.Title(w)
 	if p.compact {
 		p.state.Set(w, 0, title+": "+line)
+		p.state.SetActionKey(w, 0, action)
 		p.state.LogWidget(-1, line)
 	} else {
 		p.state.LogWidget(w, line)
+		p.state.SetActionKey(w, -1, action)
 	}
 
 	p.phases[p.currentPhase].operation = op
@@ -260,6 +300,31 @@ func (p *Progress) taskLog(taskName string, op string, line string) {
 	p.UpdateProgress()
 }
 
+// taskOutcome will update the outcome of the given action for the given task.
+func (p *Progress) taskOutcome(
+	taskName string,
+	action string,
+	outcome log.Outcome,
+) {
+	w := p.widgets[taskName]
+	p.state.SetOutcome(w, action, outcome)
+}
+
+// taskAddFlags will add the given flags to the given action for the given task.
+func (p *Progress) taskAddFlags(taskName string, action string, flags []string) {
+	w := p.widgets[taskName]
+	p.state.AddFlags(w, action, flags)
+}
+
+// taskTick will increment the tick for the given action for the given task.
+func (p *Progress) taskTick(taskName string, action string) {
+	w := p.widgets[taskName]
+	p.state.IncTick(w, action)
+}
+
+// Close should always be called when finished with the progress widgetLogLine. When
+// state is used, this will close all widgets and move the cursor to the final
+// widgetLogLine.
 func (p *Progress) Close() {
 	if p.state != nil {
 		p.state.Close()
