@@ -70,7 +70,8 @@ type TaskDescription interface {
 // Interface is the base interface that all plugins implement.
 type Interface interface {
 	// Implements will list the tasks that this plugin implements. It may return
-	// an empty list if no task is implemented.
+	// an empty list if no task is implemented. A task is only permitted to
+	// implement a single task with a given name.
 	Implements(ctx context.Context) (tasks []TaskDescription, err error)
 
 	// Goal will return the GoalDefinition for the given goal name, which

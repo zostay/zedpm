@@ -69,6 +69,15 @@ func (ti *Interface) Implements(ctx context.Context) ([]plugin.TaskDescription, 
 		if err != nil {
 			return nil, err
 		}
+
+		tdMap := make(map[string]plugin.TaskDescription, len(tds))
+		for _, td := range tds {
+			if _, alreadySeen := tdMap[td.Name()]; alreadySeen {
+				return nil, fmt.Errorf("duplicate task name %q from plugin %q", td.Name(), pluginName)
+			}
+			tdMap[td.Name()] = td
+		}
+
 		taskDescs = append(taskDescs, tds...)
 	}
 
