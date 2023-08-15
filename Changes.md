@@ -1,4 +1,4 @@
-WIP  TBD
+v0.1.0  2023-08-15
 
  * The zedpm command handles quit via signal better.
  * Added zedpm run test command via plugin-go.
