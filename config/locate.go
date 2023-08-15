@@ -93,6 +93,11 @@ func DefaultConfig() *Config {
 				Command:    "zedpm-plugin-github",
 				Properties: storage.New().RO(),
 			},
+			{
+				Name:       "go",
+				Command:    "zedpm-plugin-go",
+				Properties: storage.New().RO(),
+			},
 		},
 	}
 }
