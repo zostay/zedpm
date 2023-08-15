@@ -1,3 +1,7 @@
+WIP  TBD
+
+ * Fix default configuration to look for zedpm-plugin-go
+
 v0.1.0  2023-08-15
 
  * The zedpm command handles quit via signal better.
