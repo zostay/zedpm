@@ -1,4 +1,4 @@
-WIP  TBD
+v0.1.1  2023-08-15
 
  * Fix default configuration to look for zedpm-plugin-go
 
