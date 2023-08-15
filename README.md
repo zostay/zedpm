@@ -79,7 +79,7 @@ Linting runs programs that perform correctness checks against your code and
 other files. This can run a static analyzer to verify that your code does not
 implement certain anti-patterns that are prone to cause bugs.
 
-### Test (not yet implemented)
+### Test
 
 Testing runs some set of test suites against the project to verify that the code
 is working correctly.
@@ -135,6 +135,11 @@ according to a semantic version.
 This provides tasks for creating pull requests during release, awaiting for
 CI/CD tests to complete successfully, merging the pull request, and creating the
 release.
+
+### zedpm-plugin-go
+
+This provides tools for accessing aspects of the go command for various zedpm
+commands.
 
 ### zedpm-plugin-goals
 

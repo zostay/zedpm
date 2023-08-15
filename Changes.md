@@ -1,5 +1,7 @@
 WIP  TBD
 
+ * The zedpm command handles quit via signal better.
+ * Added zedpm run test command via plugin-go.
  * Improved error messages in plugin-git.
  * Added a better UI for tracking progress of a goal.
  * Added the --log-level option to all commands to adjust logging level.
