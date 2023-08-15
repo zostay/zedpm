@@ -1,3 +1,7 @@
+WIP  TBD
+
+ * Adding zedpm-plugin-golanci to run the golangci-lint command.
+
 v0.1.1  2023-08-15
 
  * Fix default configuration to look for zedpm-plugin-go
