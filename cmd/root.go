@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
@@ -101,6 +103,8 @@ func Execute() int {
 	e := master.NewExecutor(logger, m)
 
 	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGPIPE, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	defer cancel()
 	ctx = hclog.WithContext(ctx, logger)
 	goals, err := e.PotentialGoalsPhasesAndTasks(ctx)
 	if err != nil {

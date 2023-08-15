@@ -1,7 +1,9 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/zostay/go-std/slices"
 )
@@ -130,6 +132,38 @@ func (l *Logger) Warn(fmt string, args ...any) {
 func (l *Logger) Debug(fmt string, args ...any) {
 	args = l.allFields(args)
 	l.log.Debug(Smprintf(fmt, args...), args...)
+}
+
+type logWriter struct {
+	logFunc func(string, ...any)
+}
+
+func (w *logWriter) Write(p []byte) (int, error) {
+	n := len(p)
+	lines := bytes.Split(p, []byte{'\n'})
+	for _, line := range lines {
+		w.logFunc(string(line))
+	}
+	return n, nil
+}
+
+// Output returns an io.Writer that can be used to write to the given log level.
+func (l *Logger) Output(level Level) io.Writer {
+	var logFunc func(string, ...any)
+	switch level {
+	case LevelDebug:
+		logFunc = l.Debug
+	case LevelInfo:
+		logFunc = l.Info
+	case LevelWarn:
+		logFunc = l.Warn
+	case LevelError:
+		logFunc = l.Error
+	default:
+		panic("unknown level")
+	}
+
+	return &logWriter{logFunc}
 }
 
 // With returns a new logger with the given args included with every log sent.
