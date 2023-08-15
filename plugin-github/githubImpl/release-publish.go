@@ -12,6 +12,7 @@ import (
 	"github.com/zostay/zedpm/pkg/git"
 	zGithub "github.com/zostay/zedpm/pkg/github"
 	"github.com/zostay/zedpm/pkg/goals"
+	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -28,29 +29,35 @@ func (s *ReleasePublishTask) Setup(ctx context.Context) error {
 
 // CheckReadyForMerge ensures that all the required tests are passing.
 func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
+	logger := plugin.Logger(ctx, "operation", "CheckReadyForMerge")
+	logger.StartAction("CheckReadyForMerge", "Checking if pull request is ready to merge", "spin")
+
 	owner, project, err := f.OwnerProject(ctx)
 	if err != nil {
+		logger.MarkAction("CheckReadyForMerge", log.Fail)
 		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
+	logger = logger.With("owner", owner, "project", project)
+	logger.TickAction("CheckReadyForMerge")
+
 	branch, err := git.GetPropertyGitReleaseBranch(ctx)
 	if err != nil {
+		logger.MarkAction("CheckReadyForMerge", log.Fail)
 		return format.WrapErr(err, "failed to get release branch name")
 	}
 
-	logger := plugin.Logger(ctx,
-		"operation", "CheckReadyForMerge",
-		"owner", owner,
-		"project", project,
-		"branch", branch,
-	)
+	logger = logger.With("branch", branch)
+	logger.TickAction("CheckReadyForMerge")
 
 	bp, _, err := f.Client().Repositories.GetBranchProtection(ctx, owner, project, git.GetPropertyGitTargetBranch(ctx))
 	if err != nil {
 		if strings.Contains(err.Error(), "branch is not protected") {
-			logger.Info("Branch is ready to merge")
+			logger.MarkAction("CheckReadyForMerge", log.Pass)
+			logger.Info("Branch is ready to merge: no protection")
 			return nil
 		}
+		logger.MarkAction("CheckReadyForMerge", log.Fail)
 		return format.WrapErr(err, "unable to get branches %s", branch)
 	}
 
@@ -62,6 +69,7 @@ func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 
 	crs, _, err := f.Client().Checks.ListCheckRunsForRef(ctx, owner, project, branch, &github.ListCheckRunsOptions{})
 	if err != nil {
+		logger.MarkAction("CheckReadyForMerge", log.Fail)
 		return format.WrapErr(err, "unable to list check runs for branch %s", branch)
 	}
 
@@ -73,11 +81,13 @@ func (f *ReleasePublishTask) CheckReadyForMerge(ctx context.Context) error {
 
 	for k, v := range passage {
 		if !v {
+			logger.MarkAction("CheckReadyForMerge", log.Fail)
 			return fmt.Errorf("cannot merge release branch because it has not passed check %q", k)
 		}
 	}
 
-	logger.Info("All Github required checks appear to be passing")
+	logger.MarkAction("CheckReadyForMerge", log.Pass)
+	logger.Info("Branch is ready for merge: All Github required checks appear to be passing")
 
 	return nil
 }
@@ -133,20 +143,34 @@ func (f *ReleasePublishTask) Check(ctx context.Context) error {
 
 // MergePullRequest merges the PR into master.
 func (f *ReleasePublishTask) MergePullRequest(ctx context.Context) error {
+	logger := plugin.Logger(ctx, "operation", "MergePullRequest")
+	logger.StartAction("MergePullRequest", "Merging pull request", "spin")
+
 	owner, project, err := f.OwnerProject(ctx)
 	if err != nil {
+		logger.MarkAction("MergePullRequest", log.Fail)
 		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
+	logger = logger.With("owner", owner, "project", project)
+	logger.TickAction("MergePullRequest")
+
 	prs, _, err := f.Client().PullRequests.List(ctx, owner, project, &github.PullRequestListOptions{})
 	if err != nil {
+		logger.MarkAction("MergePullRequest", log.Fail)
 		return format.WrapErr(err, "unable to list pull requests")
 	}
 
+	logger.TickAction("MergePullRequest")
+
 	branch, err := git.GetPropertyGitReleaseBranch(ctx)
 	if err != nil {
+		logger.MarkAction("MergePullRequest", log.Fail)
 		return format.WrapErr(err, "failed to get release branch name")
 	}
+
+	logger = logger.With("branch", branch)
+	logger.TickAction("MergePullRequest")
 
 	prId := 0
 	for _, pr := range prs {
@@ -157,45 +181,61 @@ func (f *ReleasePublishTask) MergePullRequest(ctx context.Context) error {
 	}
 
 	if prId == 0 {
+		logger.MarkAction("MergePullRequest", log.Fail)
 		return fmt.Errorf("cannot find pull request for branch %s", branch)
 	}
 
+	logger = logger.With("pullRequestID", prId)
+	logger.TickAction("MergePullRequest")
+
 	m, _, err := f.Client().PullRequests.Merge(ctx, owner, project, prId, "Merging release branch.", &github.PullRequestOptions{})
 	if err != nil {
+		logger.MarkAction("MergePullRequest", log.Fail)
 		return format.WrapErr(err, "unable to merge pull request %d", prId)
 	}
 
 	if !m.GetMerged() {
+		logger.MarkAction("MergePullRequest", log.Fail)
 		return fmt.Errorf("failed to merge pull request %d", prId)
 	}
 
-	plugin.Logger(ctx,
-		"operation", "MergePullRequest",
-		"owner", owner,
-		"project", project,
-		"branch", branch,
-		"pullRequestID", prId,
-	).Info("Merged the pull request into the target branch.")
+	logger.MarkAction("MergePullRequest", log.Pass)
+	logger.Info("Merged the pull request into the target branch.")
 
 	return nil
 }
 
 // CreateRelease creates a release on github for the release.
 func (f *ReleasePublishTask) CreateRelease(ctx context.Context) error {
+	logger := plugin.Logger(ctx, "operation", "CreateRelease")
+	logger.StartAction("CreateRelease", "Creating a Github release", "spin")
+
 	owner, project, err := f.OwnerProject(ctx)
 	if err != nil {
+		logger.MarkAction("CreateRelease", log.Fail)
 		return format.WrapErr(err, "failed getting owner/project information")
 	}
 
+	logger = logger.With("owner", owner, "project", project)
+	logger.TickAction("CreateRelease")
+
 	tag, err := git.GetPropertyGitReleaseTag(ctx)
 	if err != nil {
+		logger.MarkAction("CreateRelease", log.Fail)
 		return format.WrapErr(err, "failed to get release tag name")
 	}
 
+	logger = logger.With("tag", tag)
+	logger.TickAction("CreateRelease")
+
 	releaseName, err := zGithub.GetPropertyGithubReleaseName(ctx)
 	if err != nil {
+		logger.MarkAction("CreateRelease", log.Fail)
 		return format.WrapErr(err, "failed to get release name")
 	}
+
+	logger = logger.With("releaseName", releaseName)
+	logger.TickAction("CreateRelease")
 
 	changesInfo := goals.GetPropertyReleaseDescription(ctx)
 	_, _, err = f.Client().Repositories.CreateRelease(ctx, owner, project,
@@ -211,15 +251,11 @@ func (f *ReleasePublishTask) CreateRelease(ctx context.Context) error {
 	)
 
 	if err != nil {
+		logger.MarkAction("CreateRelease", log.Fail)
 		return format.WrapErr(err, "failed to create release %q", releaseName)
 	}
 
-	plugin.Logger(ctx,
-		"owner", owner,
-		"project", project,
-		"tag", tag,
-		"releaseName", releaseName,
-	).Info("Created a release")
+	logger.MarkAction("CreateRelease", log.Pass)
 
 	return nil
 }

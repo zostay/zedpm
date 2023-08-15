@@ -51,12 +51,14 @@ func (s *SimpleExecutor) Execute(
 			)
 			ctx = hclog.WithContext(ctx, logger)
 
+			s.exec.taskCh <- taskName
 			task, err := s.exec.prepare(ctx, taskName)
 			if err != nil {
 				return format.WrapErr(err, "failed to prepare task %q", taskName)
 			}
 
 			err = s.run(task, ctx)
+			s.exec.taskCh <- ""
 			if err != nil {
 				return format.WrapErr(err, "failed to execute operation %s", s.stageName)
 			}

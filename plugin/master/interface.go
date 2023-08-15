@@ -3,6 +3,7 @@ package master
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/hashicorp/go-hclog"
 
@@ -69,6 +70,15 @@ func (ti *Interface) Implements(ctx context.Context) ([]plugin.TaskDescription, 
 		if err != nil {
 			return nil, err
 		}
+
+		tdMap := make(map[string]plugin.TaskDescription, len(tds))
+		for _, td := range tds {
+			if _, alreadySeen := tdMap[td.Name()]; alreadySeen {
+				return nil, fmt.Errorf("duplicate task name %q from plugin %q", td.Name(), pluginName)
+			}
+			tdMap[td.Name()] = td
+		}
+
 		taskDescs = append(taskDescs, tds...)
 	}
 
@@ -134,10 +144,10 @@ func (ti *Interface) Goal(
 	return nil, plugin.ErrUnsupportedGoal
 }
 
-// Prepare calls the Prepare method on all plugins which impement the named
+// Prepare calls the Prepare method on all plugins which implements the named
 // task. This returns a pointer to a master.Task which is able to execute the
-// task for all these plugins. If no plugin implements the named task, then
-// this method fails with plugin.ErrUnsupportedTask instead.
+// task for all these plugins. If no plugin implements the named task, then this
+// method fails with plugin.ErrUnsupportedTask instead.
 func (ti *Interface) Prepare(
 	ctx context.Context,
 	taskName string,
@@ -252,5 +262,6 @@ func (ti *Interface) ctxFor(
 		return nil, err
 	}
 
+	ctx = hclog.WithContext(ctx, ti.logger.With("task", taskName))
 	return ti.pctx.withPluginTask(ctx, configProps), nil
 }

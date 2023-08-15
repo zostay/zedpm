@@ -47,7 +47,10 @@ func IsDirty(status git.Status) bool {
 // CheckGitCleanliness ensures that the current git repository is clean and that
 // we are on the correct branch from which to trigger a release.
 func (s *ReleaseMintTask) CheckGitCleanliness(ctx context.Context) error {
-	logger := plugin.Logger(ctx, "operation", "CheckGitCleanliness")
+	logger := plugin.Logger(ctx,
+		"operation", "CheckGitCleanliness",
+		"task", "/release/mint/git",
+	)
 	logger.Info("Finding the HEAD reference")
 
 	headRef, err := s.Repository().Head()

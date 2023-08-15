@@ -59,9 +59,9 @@ func NewTerminal(tty *os.File) *Terminal {
 	return t
 }
 
-// SetEllipsis sets a string to add at the end of a truncated line. The default
-// is to have no such string and just terminate the line at the end of the
-// on-screen line.
+// SetEllipsis sets a string to add at the end of a truncated widgetLogLine. The default
+// is to have no such string and just terminate the widgetLogLine at the end of the
+// on-screen widgetLogLine.
 func (t *Terminal) SetEllipsis(ellipsis string) {
 	t.ellipsis = ellipsis
 }
@@ -105,19 +105,19 @@ func (t *Terminal) AddLines(n int) {
 	_, _ = fmt.Fprint(t.ty, strings.Repeat("\n", n))
 }
 
-// Println will write a single line to the screen. This will blank any existing
-// data on the current line before writing and will move the cursor down one
-// line afterward.
+// Println will write a single widgetLogLine to the screen. This will blank any existing
+// data on the current widgetLogLine before writing and will move the cursor down one
+// widgetLogLine afterward.
 func (t *Terminal) Println(line string) {
 	t.ClearLine()
 	_, _ = fmt.Fprintln(t.ty, line)
 }
 
-// WriteLine will write a single line to the screen. If the given line contains
+// WriteLine will write a single widgetLogLine to the screen. If the given widgetLogLine contains
 // a newline, it will be replaced by U+2424 (SYMBOL FOR NEWLINE) on screen. This
-// will also truncate the line so it is not longer than the terminal width. This
-// will blank any existing data on the current line before writing and will move
-// the cursor down one line afterward.
+// will also truncate the widgetLogLine so it is not longer than the terminal width. This
+// will blank any existing data on the current widgetLogLine before writing and will move
+// the cursor down one widgetLogLine afterward.
 func (t *Terminal) WriteLine(line string) {
 	t.ClearLine()
 	line = strings.ReplaceAll(line, "\n", "\u2424")

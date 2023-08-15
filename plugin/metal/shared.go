@@ -7,6 +7,7 @@ import (
 	goPlugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
+	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/plugin"
 	"github.com/zostay/zedpm/plugin/api"
 	"github.com/zostay/zedpm/plugin/grpc/client"
@@ -38,7 +39,7 @@ func (p *InterfaceGRPCPlugin) GRPCServer(
 	_ *goPlugin.GRPCBroker,
 	s *grpc.Server,
 ) error {
-	api.RegisterTaskExecutionServer(s, service.NewGRPCTaskExecution(p.logger, p.Impl))
+	api.RegisterTaskExecutionServer(s, service.NewGRPCTaskExecution(log.New(p.logger), p.Impl))
 	return nil
 }
 

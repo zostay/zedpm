@@ -64,7 +64,7 @@ func Execute() int {
 
 	progress = ui.NewProgress(os.Stdout)
 	defer progress.Close()
-	progressAdapter := ui.NewSinkAdapter(progress)
+	progressAdapter := ui.NewSinkAdapter(progress, lvl)
 
 	stdOut = ui.NewWriter("zedpm", "info", progress)
 	stdErr = ui.NewWriter("zedpm", "error", progress)

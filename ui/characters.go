@@ -7,7 +7,7 @@ import (
 const esc byte = 0x1b
 const ctrl byte = '['
 
-// Characters is a scanner that returns character groups for a terminal line one
+// Characters is a scanner that returns character groups for a terminal widgetLogLine one
 // at a time. Each group represents either some visible element (a grapheme or
 // space or 0-width component of a unicode string) or a complete terminal escape
 // sequence. Only a subset of CSI escapes are supported (i.e., only including

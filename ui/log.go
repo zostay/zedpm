@@ -7,10 +7,13 @@ import (
 // ProgressAdapter sends logs to the progress.
 type ProgressAdapter struct {
 	progress *Progress
+
+	// because hclog doesn't seem to pay attention to this!?
+	minLevel hclog.Level
 }
 
-func NewSinkAdapter(progress *Progress) *ProgressAdapter {
-	return &ProgressAdapter{progress}
+func NewSinkAdapter(progress *Progress, minLevel hclog.Level) *ProgressAdapter {
+	return &ProgressAdapter{progress, minLevel}
 }
 
 func (p *ProgressAdapter) Accept(
@@ -19,5 +22,7 @@ func (p *ProgressAdapter) Accept(
 	msg string,
 	args ...any,
 ) {
-	p.progress.Log(name, level.String(), msg, args...)
+	if level >= p.minLevel {
+		p.progress.Log(name, level.String(), msg, args...)
+	}
 }
