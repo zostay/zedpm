@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/oklog/ulid/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 	"github.com/zostay/zedpm/plugin/api"
@@ -32,14 +32,14 @@ type TaskExecution struct {
 	api.UnimplementedTaskExecutionServer
 
 	Impl   plugin.Interface
-	logger hclog.Logger
+	logger *log.Logger
 	state  map[string]map[string]*TaskState
 }
 
 // NewGRPCTaskExecution returns a new TaskExecution object that will map
 // incoming gRPC service calls to a plugin.Interface implementation.
 func NewGRPCTaskExecution(
-	logger hclog.Logger,
+	logger *log.Logger,
 	impl plugin.Interface,
 ) *TaskExecution {
 	taskDescs, err := impl.Implements(context.Background())

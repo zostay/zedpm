@@ -5,9 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-hclog"
-
 	"github.com/zostay/zedpm/config"
+	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/pkg/storage"
 )
 
@@ -22,8 +21,7 @@ type contextKey struct{}
 // AtomicProperties function is provided to allow for atomic operations to be
 // safely performed without races.
 type Context struct {
-	// TODO The hclog.Logger is rubbish. Switch to zap.Logger.
-	logger     hclog.Logger
+	logger     *log.Logger
 	cleanup    []SimpleTask
 	addFiles   []string
 	properties *storage.KVChanges
@@ -43,7 +41,7 @@ type SimpleTask func()
 // caller can apply these changes by using UpdateStorage and StorageChanges
 // together.
 func NewContext(
-	logger hclog.Logger,
+	logger *log.Logger,
 	properties storage.KV,
 ) *Context {
 	props := storage.WithChangeTracking(properties)
@@ -64,7 +62,7 @@ func NewContext(
 // This has the same limitations as NewContext regarding the properties that is
 // mentioned in NewContext.
 func NewConfigContext(
-	logger hclog.Logger,
+	logger *log.Logger,
 	runtime storage.KV,
 	taskName string,
 	targetName string,
@@ -146,7 +144,7 @@ func contextFrom(ctx context.Context) *Context {
 // Logger returns the logger for the plugin to use. If any withArgs are passed,
 // the returned logger will have had the hclog.Logger.With function called to
 // set properties on the logger.
-func Logger(ctx context.Context, withArgs ...interface{}) hclog.Logger {
+func Logger(ctx context.Context, withArgs ...interface{}) log.Interface {
 	pctx := contextFrom(ctx)
 	if len(withArgs) > 0 {
 		return pctx.logger.With(withArgs...)

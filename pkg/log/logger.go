@@ -10,17 +10,34 @@ import (
 type Outcome string
 
 const (
-	Fail Outcome = "fail"
-	Pass Outcome = "pass"
+	Working Outcome = ""
+	Fail    Outcome = "fail"
+	Pass    Outcome = "pass"
+	Skip    Outcome = "skip"
+	Retry   Outcome = "retry"
 )
+
+// IsFinal returns true if the Outcome is considered a terminal state.
+func (o Outcome) IsFinal() bool {
+	return o == Fail || o == Pass || o == Skip
+}
 
 // ActionFlag provides additional flags for actions
 type ActionFlag string
 
 const (
-	None         ActionFlag = "none"
-	Spinning     ActionFlag = "spin"
+	// None is not a flag.
+	None ActionFlag = "none"
+
+	// Spinning requests a manually ticked spinner.
+	Spinning ActionFlag = "spin"
+
+	// AutoSpinning requests an automatically ticked spinner.
 	AutoSpinning ActionFlag = "auto-spin"
+
+	// Plain requests that the log line be printed without spinners, outcomes,
+	// etc. Just the message itself.
+	Plain ActionFlag = "plain"
 )
 
 type LowLevelLogger interface {
@@ -62,6 +79,7 @@ func (l *Logger) allFields(argLists ...[]any) []any {
 //	log.None - no-op flag
 //	log.Spin - request a manually ticked spinner
 //	log.AutoSpin - request an automatically ticked spinner
+//	log.Plain - just the message, no spinners, outcomes, etc.
 func (l *Logger) StartAction(key, desc string, flags ...ActionFlag) {
 	l.actions[key] = desc
 	l.Info(desc, "@action", key, "@actionFlags", flags)
@@ -74,8 +92,8 @@ func (l *Logger) TickAction(key string) {
 	l.Debug(desc, "@action", key, "@tick", 1)
 }
 
-// EndAction logs the original message with the given outcome.
-func (l *Logger) EndAction(key string, outcome Outcome) {
+// MarkAction logs the original message with the given outcome.
+func (l *Logger) MarkAction(key string, outcome Outcome) {
 	desc := l.actions[key]
 	delete(l.actions, key)
 	l.Info(desc+": %[@outcome]s", "@action", key, "@outcome", outcome)
@@ -115,10 +133,11 @@ func (l *Logger) Debug(fmt string, args ...any) {
 }
 
 // With returns a new logger with the given args included with every log sent.
-func (l *Logger) With(args ...any) *Logger {
+func (l *Logger) With(args ...any) Interface {
 	fields := l.allFields(args)
 	return &Logger{
-		fields: fields,
-		log:    l.log,
+		fields:  fields,
+		actions: l.actions,
+		log:     l.log,
 	}
 }

@@ -30,11 +30,12 @@ import (
 type InterfaceExecutor struct {
 	m      *Interface
 	logger hclog.Logger
+	taskCh chan string
 }
 
 // NewExecutor creates a new InterfaceExecutor paired with the given Interface.
 func NewExecutor(logger hclog.Logger, m *Interface) *InterfaceExecutor {
-	return &InterfaceExecutor{m, logger}
+	return &InterfaceExecutor{m, logger, make(chan string)}
 }
 
 // SetTargetName is used to update the target name to use when configuring the

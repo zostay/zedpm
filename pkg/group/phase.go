@@ -5,8 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/hashicorp/go-hclog"
-
+	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/pkg/storage"
 	"github.com/zostay/zedpm/plugin"
 )
@@ -62,7 +61,7 @@ func (p *Phase) Tasks() []plugin.TaskDescription {
 // The given logger and properties are used to initialize the context object if
 // it has not been initialized yet.
 func (p *Phase) Context(
-	logger hclog.Logger,
+	logger *log.Logger,
 	properties storage.KV,
 ) *plugin.Context {
 	if p.pctx != nil {
