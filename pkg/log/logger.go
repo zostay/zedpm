@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
@@ -139,7 +140,10 @@ type logWriter struct {
 
 func (w *logWriter) Write(p []byte) (int, error) {
 	n := len(p)
-	w.logFunc(string(p))
+	lines := bytes.Split(p, []byte{'\n'})
+	for _, line := range lines {
+		w.logFunc(string(line))
+	}
 	return n, nil
 }
 
