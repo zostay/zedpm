@@ -2,9 +2,7 @@ package goImpl
 
 import (
 	"context"
-	"os/exec"
 
-	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -19,13 +17,10 @@ func (s *TestRunTask) RunTests(ctx context.Context) error {
 	)
 	logger.Info("Running go test -v ./...")
 
-	cmd := exec.CommandContext(ctx, "go", "test", "-v", "./...")
-	cmd.Stdout = logger.Output(log.LevelInfo)
-	cmd.Stderr = logger.Output(log.LevelError)
-	err := cmd.Run()
+	ps, err := RunTests(ctx)
 
 	plugin.Logger(ctx,
-		"exitcode", cmd.ProcessState.ExitCode(),
+		"exitcode", ps.ExitCode(),
 	).Info("Exited go test -v ./...")
 
 	return err
