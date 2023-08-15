@@ -21,8 +21,10 @@ func (p *Plugin) Goal(ctx context.Context, name string) (plugin.GoalDescription,
 
 // Implements provides task descriptions for /lint/project-files/golangci tasks.
 func (p *Plugin) Implements(context.Context) ([]plugin.TaskDescription, error) {
+	release := goals.DescribeRelease()
 	lint := goals.DescribeLint()
 	return []plugin.TaskDescription{
+		release.Task("mint", "golangci", "Run golangci-lint to ensure the project is ready for release."),
 		lint.Task("project-files", "golangci", "Check project files for correctness."),
 	}, nil
 }
@@ -35,6 +37,8 @@ func (p *Plugin) Prepare(
 	switch task {
 	case "/lint/project-files/golangci":
 		return &LintGolangciTask{}, nil
+	case "/release/mint/golangci":
+		return &ReleaseMintTask{}, nil
 	}
 	return nil, plugin.ErrUnsupportedTask
 }

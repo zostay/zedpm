@@ -2,9 +2,7 @@ package golangciImpl
 
 import (
 	"context"
-	"os/exec"
 
-	"github.com/zostay/zedpm/pkg/log"
 	"github.com/zostay/zedpm/plugin"
 )
 
@@ -19,13 +17,10 @@ func (l *LintGolangciTask) RunLinter(ctx context.Context) error {
 	)
 	logger.Info("Running golangci-lint run ./...")
 
-	cmd := exec.CommandContext(ctx, "golangci-lint", "run", "./...")
-	cmd.Stdout = logger.Output(log.LevelInfo)
-	cmd.Stderr = logger.Output(log.LevelError)
-	err := cmd.Run()
+	ps, err := RunLinter(ctx)
 
 	plugin.Logger(ctx,
-		"exitcode", cmd.ProcessState.ExitCode(),
+		"exitcode", ps.ExitCode(),
 	).Info("Exited golangci-lint run ./...")
 
 	return err
