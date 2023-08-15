@@ -1,5 +1,16 @@
 package log
 
+import "io"
+
+type Level int
+
+const (
+	LevelDebug Level = iota
+	LevelInfo
+	LevelWarn
+	LevelError
+)
+
 // Interface is the logging interface that is provided to both the plugin
 // logging system and the master logging system.
 type Interface interface {
@@ -14,4 +25,6 @@ type Interface interface {
 	StartAction(key, desc string, flags ...ActionFlag)
 	TickAction(key string)
 	MarkAction(key string, outcome Outcome)
+
+	Output(level Level) io.Writer
 }
