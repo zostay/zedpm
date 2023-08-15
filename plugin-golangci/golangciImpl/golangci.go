@@ -1,4 +1,4 @@
-package goImpl
+package golangciImpl
 
 import (
 	"context"
@@ -9,13 +9,12 @@ import (
 	"github.com/zostay/zedpm/plugin"
 )
 
-func RunTests(ctx context.Context) (*os.ProcessState, error) {
+func RunLinter(ctx context.Context) (*os.ProcessState, error) {
 	logger := plugin.Logger(ctx)
 
-	cmd := exec.CommandContext(ctx, "go", "test", "-v", "./...")
+	cmd := exec.CommandContext(ctx, "golangci-lint", "run", "./...")
 	cmd.Stdout = logger.Output(log.LevelInfo)
 	cmd.Stderr = logger.Output(log.LevelError)
-
 	err := cmd.Run()
 
 	return cmd.ProcessState, err

@@ -15,8 +15,10 @@ type Plugin struct{}
 
 // Implements provides task descriptions for /test/run/go tasks.
 func (p *Plugin) Implements(ctx context.Context) ([]plugin.TaskDescription, error) {
+	release := goals.DescribeRelease()
 	test := goals.DescribeTest()
 	return []plugin.TaskDescription{
+		release.Task("mint", "go", "Run tests to ensure the project is ready for release."),
 		test.Task("run", "go", "Run the go test command."),
 	}, nil
 }
@@ -32,6 +34,8 @@ func (p *Plugin) Prepare(
 	task string,
 ) (plugin.Task, error) {
 	switch task {
+	case "/release/mint/go":
+		return &ReleaseMintTask{}, nil
 	case "/test/run/go":
 		return &TestRunTask{}, nil
 	}

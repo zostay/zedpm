@@ -98,6 +98,11 @@ func DefaultConfig() *Config {
 				Command:    "zedpm-plugin-go",
 				Properties: storage.New().RO(),
 			},
+			{
+				Name:       "golangci",
+				Command:    "zedpm-plugin-golangci",
+				Properties: storage.New().RO(),
+			},
 		},
 	}
 }

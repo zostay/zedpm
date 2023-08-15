@@ -1,3 +1,9 @@
+WIP  TBD
+
+ * Adding zedpm-plugin-golanci to run the golangci-lint command.
+ * Add go test as a check stage to the release goal, minting phase.
+ * Add golangci-lint run as a check to the release goal during the minting phase.
+
 v0.1.1  2023-08-15
 
  * Fix default configuration to look for zedpm-plugin-go
