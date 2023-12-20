@@ -2,8 +2,8 @@
 package main
 
 import (
-	"github.com/zostay/zedpm/plugin-github/githubImpl"
 	"github.com/zostay/zedpm/plugin/metal"
+	"github.com/zostay/zedpm/zedpm-plugin-github/githubImpl"
 )
 
 func main() {
