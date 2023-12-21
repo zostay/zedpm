@@ -12,6 +12,7 @@ import (
 	"github.com/zostay/zedpm/config"
 	"github.com/zostay/zedpm/format"
 	"github.com/zostay/zedpm/plugin"
+	"github.com/zostay/zedpm/zedpm-plugin-github/githubImpl"
 )
 
 // runPluginServerLocally is a variable that can be configured to replace or add

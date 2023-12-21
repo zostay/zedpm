@@ -45,6 +45,7 @@ func (g *Github) SetupGithubClient(ctx context.Context) error {
 
 var githubPrefixes = []string{
 	"git@github.com:",
+	"ssh://git@github.com/",
 	"https://github.com/",
 }
 
@@ -92,5 +93,5 @@ func (g *Github) OwnerProject(ctx context.Context) (string, string, error) {
 		}
 	}
 
-	return owner, project, fmt.Errorf("unable to determine Github project and owner from git remote configuration: remote URL does not look like a github URL")
+	return owner, project, fmt.Errorf("unable to determine Github project and owner from git remote configuration: remote URL %q does not look like a github URL", url)
 }

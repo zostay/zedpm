@@ -200,7 +200,7 @@ func (s *ReleaseMintTask) PushReleaseBranch(ctx context.Context) error {
 		RefSpecs:   []config.RefSpec{branchRefSpec},
 	})
 	if err != nil {
-		return format.WrapErr(err, "error pushing changes to github")
+		return format.WrapErr(err, "error pushing changes to github branch %q", branchRefSpec.String())
 	}
 
 	plugin.ForCleanup(ctx, func() {
